@@ -38,7 +38,7 @@ class Vehicle
     private ?\DateTime $firstRegistrationDate = null;
 
     #[ORM\Column(options: ['default' => false])]
-    private ?bool $archived = null;
+    private bool $archived = false;
 
     #[ORM\ManyToOne(inversedBy: 'vehicles')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]

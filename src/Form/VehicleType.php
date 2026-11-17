@@ -17,7 +17,7 @@ class VehicleType extends AbstractType
         $builder
             ->add('type', ChoiceType::class, [
                 'label' => 'Type de véhicule',
-                'choices' => ['Voiture' => 'car', 'Moto' => 'motorcycle'],
+                'choices' => ['Voiture' => 'car', 'Moto' => 'moto'],
             ])
             ->add('brand', TextType::class, ['label' => 'Marque'])
             ->add('model', TextType::class, ['label' => 'Modèle'])

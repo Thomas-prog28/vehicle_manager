@@ -1,21 +1,86 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Mes véhicules{% endblock %}
+{% block title %}Mon garage — Tableau de bord{% endblock %}
 
 {% block body %}
-<section>
-    <div class="container">
-        <h1>Mes véhicules</h1>
-        <a href="{{ path('app_vehicle_new') }}">Ajouter un véhicule</a>
+<div class="min-h-screen">
+    {# En-tête #}
+    <header class="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
+        <a href="{{ path('app_dashboard') }}" class="flex items-center gap-2 font-display text-2xl font-bold">
+            <span class="grid size-10 place-items-center rounded-xl bg-primary text-brass">
+                {{ ux_icon('lucide:car', {class: 'size-5'}) }}
+            </span>
+            Garage
+        </a>
 
-        {% for vehicle in vehicles %}
-            <article>
-                <h2>{{ vehicle.brand }} {{ vehicle.model }}</h2>
-                <p>{{ vehicle.plate }} · {{ vehicle.type == 'car' ? 'Voiture' : 'Moto' }}</p>
-            </article>
-        {% else %}
-            <p>Aucun véhicule pour le moment.</p>
-        {% endfor %}
-    </div>
-</section>
+        <div class="flex items-center gap-2">
+            <button type="button" class="relative grid size-11 cursor-pointer place-items-center rounded-full bg-card shadow-sm" aria-label="Alertes">
+                {{ ux_icon('lucide:bell', {class: 'size-5'}) }}
+                {% if alerts_count|default(0) > 0 %}
+                    <span class="absolute -right-0.5 -top-0.5 grid size-5 place-items-center rounded-full bg-alert text-[10px] font-bold text-alert-foreground">
+                        {{ alerts_count }}
+                    </span>
+                {% endif %}
+            </button>
+
+            <a href="{{ logout_path() }}" class="grid size-11 place-items-center rounded-full bg-card shadow-sm transition hover:bg-secondary" aria-label="Déconnexion">
+                {{ ux_icon('lucide:log-out', {class: 'size-5'}) }}
+            </a>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-7xl px-6 pb-16">
+        {# Titre et bouton principal #}
+        <section class="flex flex-wrap items-end justify-between gap-6 py-8 animate-rise">
+            <div>
+                <p class="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                    Bonjour {{ app.user.firstname|default(app.user.email) }},
+                </p>
+                <h1 class="font-display text-5xl font-semibold md:text-6xl">
+                    Ton garage
+                    <span class="rounded-2xl bg-brand px-3 text-brand-foreground">{{ vehicles|length }}</span>
+                </h1>
+            </div>
+
+            <a href="{{ path('app_vehicle_new') }}" class="flex h-12 items-center gap-2 rounded-full bg-primary px-6 font-semibold text-primary-foreground transition hover:-translate-y-0.5">
+                {{ ux_icon('lucide:plus', {class: 'size-5'}) }}
+                Ajouter un véhicule
+            </a>
+        </section>
+
+        {# Grille des 3 statistiques #}
+        <section class="mb-10 grid gap-4 sm:grid-cols-3">
+            <twig:StatCard
+                label="Km cumulés"
+                value="{{ total_km|default(0)|number_format(0, ',', ' ') }}"
+                icon="lucide:gauge"
+            />
+            <twig:StatCard
+                label="Dépenses entretien {{ 'now'|date('Y') }}"
+                value="{{ total_expenses|default(0)|number_format(0, ',', ' ') }} €"
+                icon="lucide:wrench"
+            />
+            <twig:StatCard
+                label="Échéances à venir (30 j)"
+                value="{{ alerts_count|default(0) }}"
+                icon="lucide:calendar-clock"
+                :hot="true"
+            />
+        </section>
+
+        {# Grille des véhicules #}
+        <section class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {% for vehicle in vehicles %}
+                <twig:VehicleCard :vehicle="vehicle" :delay="loop.index0 * 90" />
+            {% endfor %}
+
+            <a href="{{ path('app_vehicle_new') }}" class="flex min-h-80 flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-border text-muted-foreground transition hover:border-primary hover:text-foreground">
+                <span class="grid size-14 place-items-center rounded-full bg-secondary">
+                    {{ ux_icon('lucide:plus', {class: 'size-6'}) }}
+                </span>
+                <span class="font-semibold">Nouveau véhicule</span>
+            </a>
+        </section>
+    </main>
+</div>
 {% endblock %}

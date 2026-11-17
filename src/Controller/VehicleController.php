@@ -4,7 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Entity\Vehicle;
-use App\Form\vehicleType;
+use App\Form\VehicleType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -31,6 +31,6 @@ final class VehicleController extends AbstractController
             return $this->redirectToRoute('app_dashboard');
         }
 
-        return $this->render('vehicle/new.html.twig', ['form' => $form]);
+        return $this->render('vehicle/index.html.twig', ['form' => $form]);
     }
 }

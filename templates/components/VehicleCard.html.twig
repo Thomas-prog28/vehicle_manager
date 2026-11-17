@@ -1,0 +1,68 @@
+{% props vehicle, delay = 0, tone = 'bg-brand text-brand-foreground', km = 0, nextService = 'À planifier', serviceIn = null, insurance = 'Non renseignée', insIn = null %}
+
+{% set serviceWarn = serviceIn is not null and serviceIn < 500 %}
+{% set insWarn = insIn is not null and insIn < 30 %}
+{% set cardTone = (serviceWarn or insWarn) ? 'bg-alert text-alert-foreground' : (vehicle.type == 'moto' ? 'bg-info text-info-foreground' : tone) %}
+
+<article style="animation-delay: {{ delay }}ms" class="group overflow-hidden rounded-3xl bg-card shadow-sm transition hover:-translate-y-1 hover:shadow-xl animate-rise">
+    {# Bannière colorée avec plaque et silhouette #}
+    <div class="relative h-40 p-6 {{ cardTone }}">
+        <span class="rounded-full bg-card/90 px-3 py-1 font-mono text-sm font-bold text-foreground">
+            {{ vehicle.plate }}
+        </span>
+
+        {% if vehicle.type|lower == 'moto' %}
+            {{ ux_icon('mdi:motorbike', {class: 'absolute -bottom-4 right-4 size-36 opacity-25 transition group-hover:scale-110', 'stroke-width': '1.2'}) }}
+        {% else %}
+            {{ ux_icon('lucide:car', {class: 'absolute -bottom-6 right-2 size-40 opacity-25 transition group-hover:scale-110', 'stroke-width': '1.2'}) }}
+        {% endif %}
+    </div>
+
+    {# Détails du véhicule #}
+    <div class="space-y-5 p-6">
+        <div>
+            <h2 class="font-display text-2xl font-bold">{{ vehicle.brand }} {{ vehicle.model }}</h2>
+            <p class="text-sm text-muted-foreground">
+                {% if vehicle.firstRegistrationDate %}
+                    Immatriculé le {{ vehicle.firstRegistrationDate|date('m/Y') }}
+                {% else %}
+                    Date d'immatriculation non renseignée
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="flex items-baseline gap-2">
+            <span class="font-display text-4xl font-semibold">{{ km|number_format(0, ',', ' ') }}</span>
+            <span class="text-muted-foreground">km</span>
+        </div>
+
+        {# Encarts Révision & Assurance #}
+        <div class="grid grid-cols-2 gap-3">
+            <div class="rounded-2xl p-3 {{ serviceWarn ? 'bg-alert/10' : 'bg-muted' }}">
+                <div class="mb-1 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                    {{ ux_icon('lucide:wrench', {class: 'size-3.5'}) }}
+                    Prochaine révision
+                </div>
+                <p class="text-sm font-semibold leading-tight">{{ nextService }}</p>
+                {% if serviceIn is not null %}
+                    <p class="text-xs font-bold {{ serviceWarn ? 'text-alert' : 'text-muted-foreground' }}">
+                        dans {{ serviceIn|number_format(0, ',', ' ') }} km
+                    </p>
+                {% endif %}
+            </div>
+
+            <div class="rounded-2xl p-3 {{ insWarn ? 'bg-alert/10' : 'bg-muted' }}">
+                <div class="mb-1 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                    {{ ux_icon('lucide:shield-check', {class: 'size-3.5'}) }}
+                    Assurance
+                </div>
+                <p class="text-sm font-semibold leading-tight">{{ insurance }}</p>
+                {% if insIn is not null %}
+                    <p class="text-xs font-bold {{ insWarn ? 'text-alert' : 'text-muted-foreground' }}">
+                        J-{{ insIn }}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</article>
