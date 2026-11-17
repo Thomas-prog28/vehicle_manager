@@ -19,9 +19,9 @@ class VehicleType extends AbstractType
                 'label' => 'Type de véhicule',
                 'choices' => ['Voiture' => 'car', 'Moto' => 'moto'],
             ])
-            ->add('brand', TextType::class, ['label' => 'Marque'])
-            ->add('model', TextType::class, ['label' => 'Modèle'])
-            ->add('plate', TextType::class, ['label' => 'Immatriculation'])
+            ->add('brand', TextType::class, ['label' => 'Marque', 'attr' => ['placeholder' => 'Ex. Peugeot, Honda, Renault...'],])
+            ->add('model', TextType::class, ['label' => 'Modèle', 'attr' => ['placeholder' => 'Ex. 308 SW, CBF 600...'],])
+            ->add('plate', TextType::class, ['label' => 'Immatriculation', 'attr' => ['placeholder' => 'AB-123-CD', 'class' => 'font-mono uppercase',],])
             ->add('firstRegistrationDate', DateType::class, [
                 'label' => '1re mise en circulation',
                 'widget' => 'single_text',
