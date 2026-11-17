@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau véhicule{% endblock %}
+
+{% block body %}
+<section>
+    <div class="container">
+        <h1>Ajouter un véhicule</h1>
+
+        {{ form_start(form) }}
+            {{ form_widget(form) }}
+            <button type="submit">Enregistrer</button>
+        {{ form_end(form) }}
+
+        <a href="{{ path('app_dashboard') }}">Annuler</a>
+    </div>
+</section>
+{% endblock %}

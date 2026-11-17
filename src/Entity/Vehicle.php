@@ -7,9 +7,12 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\BridgeDoctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: VehicleRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_USER_PLATE', fields: ['user', 'plate'])]
+#[UniqueEntity(fields: ['user', 'plate'], message: 'Ce véhicule est déjà enregistré.', errorPath: 'plate')]
 class Vehicle
 {
     #[ORM\Id]
@@ -27,6 +30,8 @@ class Vehicle
     private ?string $model = null;
 
     #[ORM\Column(length: 12)]
+    #[Assert\NotBlank]
+    #[Assert\Regex(pattern: '/^([A-Z]{2}-\d{3}-[A-Z]{2}|\d{1,4} [A-Z]{1,3} (\d{2,3}|2[AB]))$/', message: 'Format attendu : AB-123-CD (depuis 2009) ou 1234 AB 56 (avant 2009).')]
     private ?string $plate = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
@@ -105,7 +110,16 @@ class Vehicle
 
     public function setPlate(string $plate): static
     {
-        $this->plate = $plate;
+        // Séparateurs unifiés, majuscules
+        $clean = strtoupper(trim(preg_replace('/[\s\-]+/', ' ', $plate)));
+
+        if (preg_match('/^([A-Z]{2}) ?(\d{3}) ?([A-Z]{2})$/', $clean, $m)) {
+            $clean = $m[1] . '-' . $m[2] . '-' . $m[3];          // SIV : AB-123-CD
+        } elseif (preg_match('/^(\d{1,4}) ?([A-Z]{1,3}) ?(\d{2,3}|2[AB])$/', $clean, $m)) {
+            $clean = $m[1] . ' ' . $m[2] . ' ' . $m[3];          // ancien : 1234 AB 56
+        }
+
+        $this->plate = $clean;
 
         return $this;
     }
