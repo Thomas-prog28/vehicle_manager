@@ -4,7 +4,7 @@ services:
   database:
     image: postgres:${POSTGRES_VERSION:-16}-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-vehiclemg}
+      POSTGRES_DB: ${POSTGRES_DB:-vehicle_manager}
       # You should definitely change the password in production
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pwd}
       POSTGRES_USER: ${POSTGRES_USER:-tgdev}
