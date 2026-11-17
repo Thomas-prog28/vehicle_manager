@@ -1,19 +1,83 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Register{% endblock %}
+{% block title %}Garage — Inscription{% endblock %}
 
 {% block body %}
-    <h1>Register</h1>
+    <div class="grid min-h-screen lg:grid-cols-2">
+        {# Panneau gauche sombre (ordinateur) #}
+        <section class="relative hidden overflow-hidden bg-primary p-12 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
+            <a href="{{ path('app_login') }}" class="flex items-center gap-2 font-display text-2xl font-bold">
+                <span class="grid size-10 place-items-center rounded-xl bg-brand text-brand-foreground">
+                    {{ ux_icon('lucide:car', {class: 'size-5'}) }}
+                </span>
+                Garage
+            </a>
 
-    {{ form_errors(registrationForm) }}
+            <h1 class="font-display text-7xl font-semibold leading-[0.95] animate-rise">
+                Ton garage.<br>
+                <span class="text-brass">Zéro oubli.</span>
+            </h1>
 
-    {{ form_start(registrationForm) }}
-        {{ form_row(registrationForm.email) }}
-        {{ form_row(registrationForm.plainPassword, {
-            label: 'Password'
-        }) }}
-        {{ form_row(registrationForm.agreeTerms) }}
+            <p class="max-w-sm text-primary-foreground/75">
+                Crée ton espace en quelques secondes pour suivre tes véhicules, révisions et contrats d'assurance.
+            </p>
 
-        <button type="submit" class="btn">Register</button>
-    {{ form_end(registrationForm) }}
+            <div class="pointer-events-none absolute -right-24 -top-24 size-80 rounded-full bg-brand/30 blur-3xl"></div>
+        </section>
+
+        {# Panneau droit : Formulaire d'inscription #}
+        <section class="flex items-center justify-center p-6 sm:p-8">
+            <div class="w-full max-w-sm space-y-6 animate-rise">
+                {# Logo visible uniquement sur mobile #}
+                <a href="{{ path('app_login') }}" class="flex items-center gap-2 font-display text-2xl font-bold lg:hidden">
+                    <span class="grid size-10 place-items-center rounded-xl bg-primary text-brass">
+                        {{ ux_icon('lucide:car', {class: 'size-5'}) }}
+                    </span>
+                    Garage
+                </a>
+
+                <div>
+                    <h2 class="font-display text-4xl font-semibold">Créer un compte</h2>
+                    <p class="mt-2 text-muted-foreground">Commence à gérer tes véhicules dès maintenant.</p>
+                </div>
+
+                {{ form_errors(registrationForm) }}
+
+                {{ form_start(registrationForm) }}
+                    {# Si tu as un champ prénom, décommente la ligne ci-dessous #}
+                    {# {{ form_row(registrationForm.firstname, {label: 'Prénom', attr: {placeholder: 'Thomas'}}) }} #}
+
+                    {{ form_row(registrationForm.email, {
+                    label: 'Email',
+                    attr: {placeholder: 'toi@email.fr', autocomplete: 'email'}
+                }) }}
+
+                    {{ form_row(registrationForm.plainPassword, {
+                    label: 'Mot de passe',
+                    attr: {placeholder: '••••••••', autocomplete: 'new-password'}
+                }) }}
+
+                    {% if registrationForm.agreeTerms is defined %}
+                        <div class="mb-5 flex items-center gap-2.5">
+                            {{ form_widget(registrationForm.agreeTerms) }}
+                            <label for="{{ registrationForm.agreeTerms.vars.id }}" class="cursor-pointer text-xs text-muted-foreground">
+                                J'accepte les conditions d'utilisation
+                            </label>
+                        </div>
+                        {{ form_errors(registrationForm.agreeTerms) }}
+                    {% endif %}
+
+                    <button type="submit" class="group mt-2 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-primary-foreground transition hover:-translate-y-0.5">
+                        Créer mon garage
+                        {{ ux_icon('lucide:arrow-right', {class: 'size-4 transition group-hover:translate-x-1'}) }}
+                    </button>
+                {{ form_end(registrationForm) }}
+
+                <p class="text-center text-sm text-muted-foreground">
+                    Déjà inscrit ?
+                    <a href="{{ path('app_login') }}" class="font-semibold text-brand hover:underline">Se connecter</a>
+                </p>
+            </div>
+        </section>
+    </div>
 {% endblock %}

@@ -28,6 +28,7 @@ security:
                     max_attempts: 5
             logout:
                 path: app_logout
+                target: app_login
                 # where to redirect after logout
                 # target: app_any_route
 
