@@ -4,7 +4,7 @@
 {% set insWarn = insIn is not null and insIn < 30 %}
 {% set cardTone = (serviceWarn or insWarn) ? 'bg-alert text-alert-foreground' : (vehicle.type == 'moto' ? 'bg-info text-info-foreground' : tone) %}
 
-<article style="animation-delay: {{ delay }}ms" class="group overflow-hidden rounded-3xl bg-card shadow-sm transition hover:-translate-y-1 hover:shadow-xl animate-rise">
+<a href="{{ path('app_vehicle_show', {id: vehicle.id}) }}" style="animation-delay: {{ delay }}ms" class="group block overflow-hidden rounded-3xl bg-card shadow-sm transition hover:-translate-y-1 hover:shadow-xl animate-rise">
     {# Bannière colorée avec plaque et silhouette #}
     <div class="relative h-40 p-6 {{ cardTone }}">
         <span class="rounded-full bg-card/90 px-3 py-1 font-mono text-sm font-bold text-foreground">
@@ -65,4 +65,4 @@
             </div>
         </div>
     </div>
-</article>
+</a>
