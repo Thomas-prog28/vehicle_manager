@@ -54,6 +54,7 @@ class Vehicle
      * @var Collection<int, Invoice>
      */
     #[ORM\OneToMany(targetEntity: Invoice::class, mappedBy: 'vehicle')]
+    #[ORM\OrderBy(['invoiceDate' => 'DESC', 'id' => 'DESC'])]
     private Collection $invoices;
 
     public function __construct()
@@ -176,6 +177,17 @@ class Vehicle
         }
 
         return $this;
+    }
+
+    public function getCurrentMileage(): int
+    {
+        foreach ($this->invoices as $invoice) {
+            if ($invoice->getMileage() !== null) {
+                return $invoice->getMileage();
+            }
+        }
+
+        return 0;
     }
 
     public function getUser(): ?User

@@ -142,7 +142,9 @@
                 <section class="space-y-4">
                     <div class="flex items-center justify-between">
                         <h2 class="font-display text-2xl font-bold">Assurance</h2>
-                        <button type="button" class="cursor-pointer text-sm font-semibold text-brand hover:underline">+ Associer</button>
+                        <button type="button" data-action="modal#open" data-modal-id-param="modal-insurance" class="cursor-pointer text-sm font-semibold text-brand hover:underline">
+                            + Associer
+                        </button>
                     </div>
 
                     {% if vehicle.coverages is empty %}
@@ -155,21 +157,43 @@
                         </div>
                     {% else %}
                         {% for coverage in vehicle.coverages %}
-                            <div class="space-y-3 rounded-3xl bg-card p-6 shadow-sm">
+                            {% set ins = coverage.insurance %}
+                            <div class="space-y-4 rounded-3xl bg-card p-6 shadow-sm">
                                 <div class="flex items-center justify-between">
                                     <span class="font-mono text-xs font-bold uppercase tracking-widest text-brand">Assuré</span>
-                                    {{ ux_icon('lucide:shield-check', {class: 'size-5 text-brand'}) }}
+                                    <button
+                                        type="button"
+                                        data-action="modal#open"
+                                        data-modal-id-param="modal-viewer"
+                                        data-url="{{ asset('uploads/insurances/' ~ ins.insurancePath) }}"
+                                        data-title="Assurance {{ ins.insurer }} — Contrat {{ ins.contractNumber }}"
+                                        class="grid size-9 cursor-pointer place-items-center rounded-xl bg-secondary text-foreground transition hover:bg-border"
+                                        title="Visualiser l'attestation"
+                                    >
+                                        {{ ux_icon('lucide:eye', {class: 'size-4'}) }}
+                                    </button>
                                 </div>
-                                <p class="font-display text-xl font-bold">
-                                    {{ coverage.insurance.name|default('Contrat #' ~ coverage.insurance.id) }}
-                                </p>
-                                <p class="text-sm text-muted-foreground">
-                                    Cotisation : <strong class="text-foreground">{{ coverage.premium|number_format(2, ',', ' ') }} €</strong>
-                                </p>
+
+                                <div>
+                                    <p class="font-display text-xl font-bold">{{ ins.insurer }}</p>
+                                    <p class="font-mono text-xs text-muted-foreground">N° {{ ins.contractNumber }}</p>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-2 rounded-2xl bg-muted p-3 text-xs">
+                                    <div>
+                                        <span class="block text-muted-foreground">Échéance</span>
+                                        <span class="font-semibold">{{ ins.endDate|date('d/m/Y') }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-muted-foreground">Cotisation</span>
+                                        <span class="font-semibold">{{ coverage.premium|number_format(2, ',', ' ') }} €</span>
+                                    </div>
+                                </div>
                             </div>
                         {% endfor %}
                     {% endif %}
                 </section>
+
             </div>
         </main>
 
@@ -202,7 +226,7 @@
         'data-invoice-scan-url-value': path('app_invoice_analyze')
     }
 }) }}
-                {# 1. Champ fichier en premier pour déclencher l'analyse #}
+                {# Le champ fichier garde data-invoice-scan-target="fileInput" #}
                 {{ form_row(invoice_form.invoiceFile, {
         attr: {
             'data-invoice-scan-target': 'fileInput',
@@ -210,19 +234,17 @@
         }
     }) }}
 
-                {# Bandeau d'état de l'analyse #}
                 <p data-invoice-scan-target="status" class="mb-4 hidden rounded-xl bg-brand/10 px-3.5 py-2.5 text-xs font-semibold text-brand"></p>
 
-                {# 2. Champs pré-remplis automatiquement #}
-                {{ form_row(invoice_form.invoiceDate, {attr: {'data-invoice-scan-target': 'date'}}) }}
-                {{ form_row(invoice_form.garage, {attr: {'data-invoice-scan-target': 'garage'}}) }}
+                {# Les 4 champs ci-dessous utilisent maintenant data-scan-field="..." #}
+                {{ form_row(invoice_form.invoiceDate, {attr: {'data-scan-field': 'date'}}) }}
+                {{ form_row(invoice_form.garage, {attr: {'data-scan-field': 'garage'}}) }}
 
                 <div class="grid gap-4 sm:grid-cols-2">
-                    {{ form_row(invoice_form.mileage, {attr: {'data-invoice-scan-target': 'mileage'}}) }}
-                    {{ form_row(invoice_form.totalTTC, {attr: {'data-invoice-scan-target': 'total'}}) }}
+                    {{ form_row(invoice_form.mileage, {attr: {'data-scan-field': 'mileage'}}) }}
+                    {{ form_row(invoice_form.totalTTC, {attr: {'data-scan-field': 'totalTTC'}}) }}
                 </div>
 
-                {# ... boutons Annuler et Enregistrer ... #}
                 <div class="mt-6 flex items-center justify-end gap-3 pt-2">
                     <button
                         type="button"
@@ -241,8 +263,83 @@
                 </div>
                 {{ form_end(invoice_form) }}
 
+
             </div>
         </div>
+
+        {# Fenêtre modale d'ajout d'assurance #}
+        <div
+            id="modal-insurance"
+            data-modal-target="dialog"
+            data-action="click->modal#closeOnBackdrop"
+            class="fixed inset-0 z-50 hidden items-center justify-center bg-primary/40 p-4 backdrop-blur-md transition"
+        >
+            <div class="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-background p-6 shadow-2xl sm:p-8 animate-rise">
+                <div class="mb-6 flex items-center justify-between">
+                    <div>
+                        <h2 class="font-display text-2xl font-bold sm:text-3xl">Associer une assurance</h2>
+                        <p class="text-sm text-muted-foreground">Téléverse ton attestation pour pré-remplir le contrat.</p>
+                    </div>
+                    <button
+                        type="button"
+                        data-action="modal#close"
+                        class="grid size-10 cursor-pointer place-items-center rounded-full bg-secondary text-foreground transition hover:bg-border"
+                        aria-label="Fermer"
+                    >
+                        {{ ux_icon('lucide:x', {class: 'size-5'}) }}
+                    </button>
+                </div>
+
+                {{ form_start(insurance_form, {
+                attr: {
+                    'data-controller': 'invoice-scan',
+                    'data-invoice-scan-url-value': path('app_insurance_analyze', {
+                        plate: vehicle.plate,
+                        vehicle: vehicle.brand ~ ' ' ~ vehicle.model ~ ' (' ~ vehicle.type ~ ')'
+                        })
+                }
+            }) }}
+                {{ form_row(insurance_form.insuranceFile, {
+                    attr: {
+                        'data-invoice-scan-target': 'fileInput',
+                        'data-action': 'change->invoice-scan#scan'
+                    }
+                }) }}
+
+                <p data-invoice-scan-target="status" class="mb-4 hidden rounded-xl bg-brand/10 px-3.5 py-2.5 text-xs font-semibold text-brand"></p>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    {{ form_row(insurance_form.insurer, {attr: {'data-scan-field': 'insurer'}}) }}
+                    {{ form_row(insurance_form.contractNumber, {attr: {'data-scan-field': 'contractNumber'}}) }}
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    {{ form_row(insurance_form.startDate, {attr: {'data-scan-field': 'startDate'}}) }}
+                    {{ form_row(insurance_form.endDate, {attr: {'data-scan-field': 'endDate'}}) }}
+                </div>
+
+                {{ form_row(insurance_form.premium, {attr: {'data-scan-field': 'premium'}}) }}
+
+                <div class="mt-6 flex items-center justify-end gap-3 pt-2">
+                    <button
+                        type="button"
+                        data-action="modal#close"
+                        class="h-12 cursor-pointer rounded-xl px-5 font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                    >
+                        Annuler
+                    </button>
+                    <button
+                        type="submit"
+                        class="flex h-12 cursor-pointer items-center gap-2 rounded-xl bg-primary px-6 font-semibold text-primary-foreground transition hover:-translate-y-0.5"
+                    >
+                        {{ ux_icon('lucide:plus', {class: 'size-4'}) }}
+                        Enregistrer
+                    </button>
+                </div>
+                {{ form_end(insurance_form) }}
+            </div>
+        </div>
+
 
         {# Fenêtre modale d'aperçu de document (PDF ou Image) #}
         <div

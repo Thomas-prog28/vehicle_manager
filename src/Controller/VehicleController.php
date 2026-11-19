@@ -5,6 +5,9 @@ namespace App\Controller;
 use App\Entity\Invoice;
 use App\Entity\User;
 use App\Entity\Vehicle;
+use App\Entity\Covered;
+use App\Entity\Insurance;
+use App\Form\InsuranceCoverageType;
 use App\Form\InvoiceType;
 use App\Form\VehicleType;
 use App\Service\InvoiceAnalyzerService;
@@ -55,6 +58,7 @@ final class VehicleController extends AbstractController
             throw $this->createAccessDeniedException('Ce véhicule ne t’appartient pas.');
         }
 
+        // 1. Formulaire Facture
         $invoice = new Invoice();
         $invoiceForm = $this->createForm(InvoiceType::class, $invoice);
         $invoiceForm->handleRequest($request);
@@ -62,55 +66,104 @@ final class VehicleController extends AbstractController
         if ($invoiceForm->isSubmitted() && $invoiceForm->isValid()) {
             /** @var UploadedFile $uploadedFile */
             $uploadedFile = $invoiceForm->get('invoiceFile')->getData();
+            $newFilename = $this->moveUploadedFile($uploadedFile, 'invoices', $slugger);
 
-            if ($uploadedFile) {
-                $originalFilename = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
-                $safeFilename = $slugger->slug($originalFilename);
-                $newFilename = $safeFilename . '-' . uniqid() . '.' . $uploadedFile->guessExtension();
+            $invoice->setInvoicePath($newFilename);
+            $invoice->setInvoiceOriginalName($uploadedFile->getClientOriginalName());
+            $invoice->setVehicle($vehicle);
 
-                $uploadDir = $this->getParameter('kernel.project_dir') . '/public/uploads/invoices';
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0775, true);
-                }
+            $em->persist($invoice);
+            $em->flush();
 
-                try {
-                    $uploadedFile->move($uploadDir, $newFilename);
-                    $invoice->setInvoicePath($newFilename);
-                    $invoice->setInvoiceOriginalName($uploadedFile->getClientOriginalName());
-                    $invoice->setVehicle($vehicle);
+            $this->addFlash('success', 'Facture ajoutée avec succès.');
+            return $this->redirectToRoute('app_vehicle_show', ['id' => $vehicle->getId()]);
+        }
 
-                    $em->persist($invoice);
-                    $em->flush();
+        // 2. Formulaire Assurance (Insurance + Covered)
+        $insurance = new Insurance();
+        $insuranceForm = $this->createForm(InsuranceCoverageType::class, $insurance);
+        $insuranceForm->handleRequest($request);
 
-                    $this->addFlash('success', 'Facture ajoutée avec succès.');
+        if ($insuranceForm->isSubmitted() && $insuranceForm->isValid()) {
+            /** @var UploadedFile $uploadedFile */
+            $uploadedFile = $insuranceForm->get('insuranceFile')->getData();
+            $newFilename = $this->moveUploadedFile($uploadedFile, 'insurances', $slugger);
 
-                    return $this->redirectToRoute('app_vehicle_show', ['id' => $vehicle->getId()]);
-                } catch (FileException) {
-                    $this->addFlash('error', 'Impossible d’enregistrer le fichier sur le serveur.');
-                }
-            }
+            $premium = (string) $insuranceForm->get('premium')->getData();
+
+            $insurance->setUser($user);
+            $insurance->setInsurancePath($newFilename);
+            $insurance->setInsuranceOriginalName($uploadedFile->getClientOriginalName());
+            // Si le scan IA a rempli le total global (ex: 968.55 €), on le garde ; sinon on prend la cotisation du véhicule
+            $insurance->setTotalAmount($insurance->getTotalAmount() ?: $premium);
+
+            $covered = new Covered();
+            $covered->setVehicle($vehicle);
+            $covered->setInsurance($insurance);
+            $covered->setPremium($premium);
+
+            $em->persist($insurance);
+            $em->persist($covered);
+            $em->flush();
+
+            $this->addFlash('success', 'Contrat d’assurance associé au véhicule.');
+            return $this->redirectToRoute('app_vehicle_show', ['id' => $vehicle->getId()]);
         }
 
         $totalSpent = 0.0;
-        $currentMileage = 0;
-
         foreach ($vehicle->getInvoices() as $item) {
             if ($item->getTotalTTC() !== null) {
                 $totalSpent += (float) $item->getTotalTTC();
-            }
-            if ($item->getMileage() !== null && $item->getMileage() > $currentMileage) {
-                $currentMileage = $item->getMileage();
             }
         }
 
         return $this->render('vehicle/show.html.twig', [
             'vehicle' => $vehicle,
             'total_spent' => $totalSpent,
-            'current_mileage' => $currentMileage,
+            'current_mileage' => $vehicle->getCurrentMileage(),
             'invoice_form' => $invoiceForm,
-            'open_invoice_modal' => $invoiceForm->isSubmitted() && !$invoiceForm->isValid(),
+            'insurance_form' => $insuranceForm,
+            'open_modal_id' => $invoiceForm->isSubmitted() && !$invoiceForm->isValid()
+                ? 'modal-invoice'
+                : ($insuranceForm->isSubmitted() && !$insuranceForm->isValid() ? 'modal-insurance' : null),
         ]);
     }
+
+    #[Route('/insurance/analyze', name: 'app_insurance_analyze', methods: ['POST'])]
+    public function analyzeInsurance(Request $request, InvoiceAnalyzerService $analyzer): JsonResponse
+    {
+        /** @var UploadedFile|null $file */
+        $file = $request->files->get('document');
+
+        if (!$file || !$file->isValid()) {
+            return $this->json(['error' => 'Fichier invalide.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $vehiclePlate = $request->query->get('plate');
+        $vehiclePlate = $request->query->get('vehicle');
+
+        try {
+            return $this->json($analyzer->analyzeInsurance($file, $vehiclePlate));
+        } catch (\Throwable) {
+            return $this->json(['error' => 'Erreur lors de l’analyse par l’IA.'], Response::HTTP_BAD_GATEWAY);
+        }
+    }
+
+
+    private function moveUploadedFile(UploadedFile $file, string $subDir, SluggerInterface $slugger): string
+    {
+        $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $newFilename = $slugger->slug($originalFilename) . '-' . uniqid() . '.' . $file->guessExtension();
+
+        $uploadDir = $this->getParameter('kernel.project_dir') . '/public/uploads/' . $subDir;
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0775, true);
+        }
+
+        $file->move($uploadDir, $newFilename);
+        return $newFilename;
+    }
+
 
     #[Route('/invoice/analyze', name: 'app_invoice_analyze', methods: ['POST'])]
     public function analyzeInvoice(Request $request, InvoiceAnalyzerService $analyzer): JsonResponse

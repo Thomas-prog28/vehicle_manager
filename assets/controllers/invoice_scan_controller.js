@@ -1,7 +1,7 @@
 import { Controller } from '@hotwired/stimulus';
 
 export default class extends Controller {
-    static targets = ['fileInput', 'date', 'garage', 'mileage', 'total', 'status'];
+    static targets = ['fileInput', 'status'];
     static values = { url: String };
 
     async scan() {
@@ -9,7 +9,7 @@ export default class extends Controller {
         if (!file) return;
 
         this.statusTarget.classList.remove('hidden');
-        this.statusTarget.textContent = 'Analyse du document en cours...';
+        this.statusTarget.textContent = 'Analyse du document par l’IA en cours...';
 
         const formData = new FormData();
         formData.append('document', file);
@@ -24,13 +24,16 @@ export default class extends Controller {
 
             const data = await response.json();
 
-            if (data.date) this.dateTarget.value = data.date;
-            if (data.garage) this.garageTarget.value = data.garage;
-            if (data.mileage) this.mileageTarget.value = data.mileage;
-            if (data.totalTTC) this.totalTarget.value = data.totalTTC;
+            // Remplit automatiquement chaque champ correspondant aux clés renvoyées par l'IA
+            Object.entries(data).forEach(([key, value]) => {
+                if (value !== null) {
+                    const field = this.element.querySelector(`[data-scan-field="${key}"]`);
+                    if (field) field.value = value;
+                }
+            });
 
             this.statusTarget.textContent = 'Champs pré-remplis automatiquement. Vérifie les infos avant de valider.';
-        } catch (error) {
+        } catch {
             this.statusTarget.textContent = 'Impossible de lire automatiquement ce document. Tu peux saisir les champs manuellement.';
         }
     }

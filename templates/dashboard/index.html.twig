@@ -52,9 +52,9 @@
             {# Grille des 3 statistiques #}
             <section class="mb-10 grid gap-4 sm:grid-cols-3">
                 <twig:StatCard
-                    label="Km cumulés"
-                    value="{{ total_km|default(0)|number_format(0, ',', ' ') }}"
-                    icon="lucide:gauge"
+                    label="Cotisation de l'assurance en cours"
+                    value="{{ total_insurance|default(0)|number_format(2, ',', ' ') }} €"
+                    icon="lucide:shield-check"
                 />
                 <twig:StatCard
                     label="Dépenses entretien {{ 'now'|date('Y') }}"
