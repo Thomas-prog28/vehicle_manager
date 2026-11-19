@@ -74,69 +74,132 @@
                 />
             </section>
 
-            {# Grille principale : Historique d'entretien (2/3) + Assurance (1/3) #}
+            {# Grille principale : Historiques (2/3) + Assurance (1/3) #}
             <div class="grid gap-6 lg:grid-cols-3">
-                {# Colonne gauche : Factures et entretiens #}
-                <section class="space-y-4 lg:col-span-2">
-                    <div class="flex items-center justify-between">
-                        <h2 class="font-display text-2xl font-bold">Historique & Factures</h2>
-                    </div>
-
-                    {% if vehicle.invoices is empty %}
-                        <div class="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-border bg-card/50 p-10 text-center">
-                            <span class="mb-3 grid size-12 place-items-center rounded-2xl bg-secondary text-muted-foreground">
-                                {{ ux_icon('lucide:wrench', {class: 'size-6'}) }}
+                {# Colonne gauche : Factures + Pleins de carburant (2/3) #}
+                <div class="space-y-8 lg:col-span-2">
+                    {# 1. Historique & Factures #}
+                    <section class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h2 class="font-display text-2xl font-bold">Historique & Factures</h2>
+                            <span class="rounded-full bg-secondary px-3 py-1 font-mono text-xs font-bold text-muted-foreground">
+                                {{ vehicle.invoices|length }}
                             </span>
-                            <p class="font-semibold">Aucune facture enregistrée</p>
-                            <p class="mt-1 max-w-sm text-sm text-muted-foreground">
-                                Ajoute tes factures de garage, révisions ou achats de pièces pour suivre l'entretien et le kilométrage.
-                            </p>
                         </div>
-                    {% else %}
-                        <div class="space-y-3">
-                            {% for invoice in vehicle.invoices %}
-                                <div class="flex flex-col justify-between gap-4 rounded-2xl bg-card p-5 shadow-sm sm:flex-row sm:items-center">
-                                    <div class="flex items-center gap-4">
-                                        <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-secondary text-foreground">
-                                            {{ ux_icon('lucide:file-text', {class: 'size-5'}) }}
-                                        </span>
-                                        <div>
-                                            <p class="font-semibold">
-                                                {{ invoice.garage ?: invoice.invoiceOriginalName }}
-                                            </p>
-                                            <p class="text-xs text-muted-foreground">
-                                                Le {{ invoice.invoiceDate|date('d/m/Y') }}
-                                                {% if invoice.mileage %}
-                                                    • {{ invoice.mileage|number_format(0, ',', ' ') }} km
-                                                {% endif %}
-                                            </p>
+
+                        {% if vehicle.invoices is empty %}
+                            <div class="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-border bg-card/50 p-10 text-center">
+                                <span class="mb-3 grid size-12 place-items-center rounded-2xl bg-secondary text-muted-foreground">
+                                    {{ ux_icon('lucide:wrench', {class: 'size-6'}) }}
+                                </span>
+                                <p class="font-semibold">Aucune facture enregistrée</p>
+                                <p class="mt-1 max-w-sm text-sm text-muted-foreground">
+                                    Ajoute tes factures de garage, révisions ou achats de pièces pour suivre l'entretien et le kilométrage.
+                                </p>
+                            </div>
+                        {% else %}
+                            <div class="space-y-3">
+                                {% for invoice in vehicle.invoices %}
+                                    <div class="flex flex-col justify-between gap-4 rounded-2xl bg-card p-5 shadow-sm sm:flex-row sm:items-center">
+                                        <div class="flex items-center gap-4">
+                                            <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-secondary text-foreground">
+                                                {{ ux_icon('lucide:file-text', {class: 'size-5'}) }}
+                                            </span>
+                                            <div>
+                                                <p class="font-semibold">
+                                                    {{ invoice.garage ?: invoice.invoiceOriginalName }}
+                                                </p>
+                                                <p class="text-xs text-muted-foreground">
+                                                    Le {{ invoice.invoiceDate|date('d/m/Y') }}
+                                                    {% if invoice.mileage %}
+                                                        • {{ invoice.mileage|number_format(0, ',', ' ') }} km
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center justify-between gap-4 sm:justify-end">
+                                            {% if invoice.totalTTC is not null %}
+                                                <span class="font-display text-lg font-bold">
+                                                    {{ invoice.totalTTC|number_format(2, ',', ' ') }} €
+                                                </span>
+                                            {% endif %}
+
+                                            <button
+                                                type="button"
+                                                data-action="modal#open"
+                                                data-modal-id-param="modal-viewer"
+                                                data-url="{{ asset('uploads/invoices/' ~ invoice.invoicePath) }}"
+                                                data-title="{{ (invoice.garage ?: invoice.invoiceOriginalName) ~ ' — ' ~ invoice.invoiceDate|date('d/m/Y') }}"
+                                                class="grid size-10 cursor-pointer place-items-center rounded-xl bg-secondary text-foreground transition hover:bg-border"
+                                                title="Visualiser le document"
+                                            >
+                                                {{ ux_icon('lucide:eye', {class: 'size-4'}) }}
+                                            </button>
                                         </div>
                                     </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </section>
 
-                                    <div class="flex items-center justify-between gap-4 sm:justify-end">
-                                        {% if invoice.totalTTC is not null %}
-                                            <span class="font-display text-lg font-bold">
-                                                {{ invoice.totalTTC|number_format(2, ',', ' ') }} €
-                                            </span>
-                                        {% endif %}
-
-                                        <button
-                                            type="button"
-                                            data-action="modal#open"
-                                            data-modal-id-param="modal-viewer"
-                                            data-url="{{ asset('uploads/invoices/' ~ invoice.invoicePath) }}"
-                                            data-title="{{ (invoice.garage ?: invoice.invoiceOriginalName) ~ ' — ' ~ invoice.invoiceDate|date('d/m/Y') }}"
-                                            class="grid size-10 cursor-pointer place-items-center rounded-xl bg-secondary text-foreground transition hover:bg-border"
-                                            title="Visualiser le document"
-                                        >
-                                            {{ ux_icon('lucide:eye', {class: 'size-4'}) }}
-                                        </button>
-                                    </div>
-                                </div>
-                            {% endfor %}
+                    {# 2. Historique des pleins de carburant #}
+                    <section class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h2 class="font-display text-2xl font-bold">Historique des pleins</h2>
+                            <span class="rounded-full bg-secondary px-3 py-1 font-mono text-xs font-bold text-muted-foreground">
+                                {{ vehicle.fuelLogs|length }}
+                            </span>
                         </div>
-                    {% endif %}
-                </section>
+
+                        {% if vehicle.fuelLogs is empty %}
+                            <div class="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-border bg-card/50 p-10 text-center">
+                                <span class="mb-3 grid size-12 place-items-center rounded-2xl bg-secondary text-muted-foreground">
+                                    {{ ux_icon('lucide:fuel', {class: 'size-6'}) }}
+                                </span>
+                                <p class="font-semibold">Aucun plein enregistré</p>
+                                <p class="mt-1 max-w-sm text-sm text-muted-foreground">
+                                    Utilise le bouton « Faire le plein » depuis le tableau de bord pour suivre ta consommation et tes dépenses carburant.
+                                </p>
+                            </div>
+                        {% else %}
+                            <div class="space-y-3">
+                                {% for log in vehicle.fuelLogs %}
+                                    <div class="flex flex-col justify-between gap-4 rounded-2xl bg-card p-5 shadow-sm sm:flex-row sm:items-center">
+                                        <div class="flex items-center gap-4">
+                                            <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand/10 text-brand">
+                                                {{ ux_icon('lucide:fuel', {class: 'size-5'}) }}
+                                            </span>
+                                            <div>
+                                                <p class="font-semibold">
+                                                    {{ log.stationName ?: 'Station non localisée' }}
+                                                </p>
+                                                <p class="text-xs text-muted-foreground">
+                                                    Le {{ log.filledAt|date('d/m/Y') }}
+                                                    • {{ log.mileage|number_format(0, ',', ' ') }} km
+                                                    • {{ log.liters|number_format(2, ',', ' ') }} L ({{ log.priceLiter|number_format(3, ',', ' ') }} €/L)
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center justify-between gap-4 sm:justify-end">
+                                            {% if log.consumption is not null %}
+                                                <span class="rounded-full bg-brand/10 px-3 py-1 font-mono text-xs font-bold text-brand">
+                                                    {{ log.consumption|number_format(2, ',', ' ') }} L/100
+                                                </span>
+                                            {% endif %}
+
+                                            <span class="font-display text-lg font-bold">
+                                                {{ log.totalPrice|number_format(2, ',', ' ') }} €
+                                            </span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </section>
+                </div>
+                  
 
                 {# Colonne droite : Contrats d'assurance (Covered) #}
                 <section class="space-y-4">
@@ -193,104 +256,104 @@
                         {% endfor %}
                     {% endif %}
                 </section>
-
             </div>
-        </main>
+    </div>
+    </main>
 
-        {# Fenêtre modale d'ajout de facture #}
-        <div
-            id="modal-invoice"
-            data-modal-target="dialog"
-            data-action="click->modal#closeOnBackdrop"
-            class="fixed inset-0 z-50 hidden items-center justify-center bg-primary/40 p-4 backdrop-blur-md transition"
-        >
-            <div class="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-background p-6 shadow-2xl sm:p-8 animate-rise">
-                <div class="mb-6 flex items-center justify-between">
-                    <div>
-                        <h2 class="font-display text-2xl font-bold sm:text-3xl">Nouvelle facture</h2>
-                        <p class="text-sm text-muted-foreground">Enregistre un entretien ou une dépense pour ce véhicule.</p>
-                    </div>
-                    <button
-                        type="button"
-                        data-action="modal#close"
-                        class="grid size-10 cursor-pointer place-items-center rounded-full bg-secondary text-foreground transition hover:bg-border"
-                        aria-label="Fermer"
-                    >
-                        {{ ux_icon('lucide:x', {class: 'size-5'}) }}
-                    </button>
+    {# Fenêtre modale d'ajout de facture #}
+    <div
+        id="modal-invoice"
+        data-modal-target="dialog"
+        data-action="click->modal#closeOnBackdrop"
+        class="fixed inset-0 z-50 hidden items-center justify-center bg-primary/40 p-4 backdrop-blur-md transition"
+    >
+        <div class="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-background p-6 shadow-2xl sm:p-8 animate-rise">
+            <div class="mb-6 flex items-center justify-between">
+                <div>
+                    <h2 class="font-display text-2xl font-bold sm:text-3xl">Nouvelle facture</h2>
+                    <p class="text-sm text-muted-foreground">Enregistre un entretien ou une dépense pour ce véhicule.</p>
                 </div>
+                <button
+                    type="button"
+                    data-action="modal#close"
+                    class="grid size-10 cursor-pointer place-items-center rounded-full bg-secondary text-foreground transition hover:bg-border"
+                    aria-label="Fermer"
+                >
+                    {{ ux_icon('lucide:x', {class: 'size-5'}) }}
+                </button>
+            </div>
 
-                {{ form_start(invoice_form, {
+            {{ form_start(invoice_form, {
     attr: {
         'data-controller': 'invoice-scan',
         'data-invoice-scan-url-value': path('app_invoice_analyze')
     }
 }) }}
-                {# Le champ fichier garde data-invoice-scan-target="fileInput" #}
-                {{ form_row(invoice_form.invoiceFile, {
+            {# Le champ fichier garde data-invoice-scan-target="fileInput" #}
+            {{ form_row(invoice_form.invoiceFile, {
         attr: {
             'data-invoice-scan-target': 'fileInput',
             'data-action': 'change->invoice-scan#scan'
         }
     }) }}
 
-                <p data-invoice-scan-target="status" class="mb-4 hidden rounded-xl bg-brand/10 px-3.5 py-2.5 text-xs font-semibold text-brand"></p>
+            <p data-invoice-scan-target="status" class="mb-4 hidden rounded-xl bg-brand/10 px-3.5 py-2.5 text-xs font-semibold text-brand"></p>
 
-                {# Les 4 champs ci-dessous utilisent maintenant data-scan-field="..." #}
-                {{ form_row(invoice_form.invoiceDate, {attr: {'data-scan-field': 'date'}}) }}
-                {{ form_row(invoice_form.garage, {attr: {'data-scan-field': 'garage'}}) }}
+            {# Les 4 champs ci-dessous utilisent maintenant data-scan-field="..." #}
+            {{ form_row(invoice_form.invoiceDate, {attr: {'data-scan-field': 'date'}}) }}
+            {{ form_row(invoice_form.garage, {attr: {'data-scan-field': 'garage'}}) }}
 
-                <div class="grid gap-4 sm:grid-cols-2">
-                    {{ form_row(invoice_form.mileage, {attr: {'data-scan-field': 'mileage'}}) }}
-                    {{ form_row(invoice_form.totalTTC, {attr: {'data-scan-field': 'totalTTC'}}) }}
-                </div>
-
-                <div class="mt-6 flex items-center justify-end gap-3 pt-2">
-                    <button
-                        type="button"
-                        data-action="modal#close"
-                        class="h-12 cursor-pointer rounded-xl px-5 font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-                    >
-                        Annuler
-                    </button>
-                    <button
-                        type="submit"
-                        class="flex h-12 cursor-pointer items-center gap-2 rounded-xl bg-primary px-6 font-semibold text-primary-foreground transition hover:-translate-y-0.5"
-                    >
-                        {{ ux_icon('lucide:plus', {class: 'size-4'}) }}
-                        Enregistrer
-                    </button>
-                </div>
-                {{ form_end(invoice_form) }}
-
-
+            <div class="grid gap-4 sm:grid-cols-2">
+                {{ form_row(invoice_form.mileage, {attr: {'data-scan-field': 'mileage'}}) }}
+                {{ form_row(invoice_form.totalTTC, {attr: {'data-scan-field': 'totalTTC'}}) }}
             </div>
+
+            <div class="mt-6 flex items-center justify-end gap-3 pt-2">
+                <button
+                    type="button"
+                    data-action="modal#close"
+                    class="h-12 cursor-pointer rounded-xl px-5 font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                >
+                    Annuler
+                </button>
+                <button
+                    type="submit"
+                    class="flex h-12 cursor-pointer items-center gap-2 rounded-xl bg-primary px-6 font-semibold text-primary-foreground transition hover:-translate-y-0.5"
+                >
+                    {{ ux_icon('lucide:plus', {class: 'size-4'}) }}
+                    Enregistrer
+                </button>
+            </div>
+            {{ form_end(invoice_form) }}
+
+
         </div>
+    </div>
 
-        {# Fenêtre modale d'ajout d'assurance #}
-        <div
-            id="modal-insurance"
-            data-modal-target="dialog"
-            data-action="click->modal#closeOnBackdrop"
-            class="fixed inset-0 z-50 hidden items-center justify-center bg-primary/40 p-4 backdrop-blur-md transition"
-        >
-            <div class="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-background p-6 shadow-2xl sm:p-8 animate-rise">
-                <div class="mb-6 flex items-center justify-between">
-                    <div>
-                        <h2 class="font-display text-2xl font-bold sm:text-3xl">Associer une assurance</h2>
-                        <p class="text-sm text-muted-foreground">Téléverse ton attestation pour pré-remplir le contrat.</p>
-                    </div>
-                    <button
-                        type="button"
-                        data-action="modal#close"
-                        class="grid size-10 cursor-pointer place-items-center rounded-full bg-secondary text-foreground transition hover:bg-border"
-                        aria-label="Fermer"
-                    >
-                        {{ ux_icon('lucide:x', {class: 'size-5'}) }}
-                    </button>
+    {# Fenêtre modale d'ajout d'assurance #}
+    <div
+        id="modal-insurance"
+        data-modal-target="dialog"
+        data-action="click->modal#closeOnBackdrop"
+        class="fixed inset-0 z-50 hidden items-center justify-center bg-primary/40 p-4 backdrop-blur-md transition"
+    >
+        <div class="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-background p-6 shadow-2xl sm:p-8 animate-rise">
+            <div class="mb-6 flex items-center justify-between">
+                <div>
+                    <h2 class="font-display text-2xl font-bold sm:text-3xl">Associer une assurance</h2>
+                    <p class="text-sm text-muted-foreground">Téléverse ton attestation pour pré-remplir le contrat.</p>
                 </div>
+                <button
+                    type="button"
+                    data-action="modal#close"
+                    class="grid size-10 cursor-pointer place-items-center rounded-full bg-secondary text-foreground transition hover:bg-border"
+                    aria-label="Fermer"
+                >
+                    {{ ux_icon('lucide:x', {class: 'size-5'}) }}
+                </button>
+            </div>
 
-                {{ form_start(insurance_form, {
+            {{ form_start(insurance_form, {
                 attr: {
                     'data-controller': 'invoice-scan',
                     'data-invoice-scan-url-value': path('app_insurance_analyze', {
@@ -299,97 +362,97 @@
                         })
                 }
             }) }}
-                {{ form_row(insurance_form.insuranceFile, {
+            {{ form_row(insurance_form.insuranceFile, {
                     attr: {
                         'data-invoice-scan-target': 'fileInput',
                         'data-action': 'change->invoice-scan#scan'
                     }
                 }) }}
 
-                <p data-invoice-scan-target="status" class="mb-4 hidden rounded-xl bg-brand/10 px-3.5 py-2.5 text-xs font-semibold text-brand"></p>
+            <p data-invoice-scan-target="status" class="mb-4 hidden rounded-xl bg-brand/10 px-3.5 py-2.5 text-xs font-semibold text-brand"></p>
 
-                <div class="grid gap-4 sm:grid-cols-2">
-                    {{ form_row(insurance_form.insurer, {attr: {'data-scan-field': 'insurer'}}) }}
-                    {{ form_row(insurance_form.contractNumber, {attr: {'data-scan-field': 'contractNumber'}}) }}
-                </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+                {{ form_row(insurance_form.insurer, {attr: {'data-scan-field': 'insurer'}}) }}
+                {{ form_row(insurance_form.contractNumber, {attr: {'data-scan-field': 'contractNumber'}}) }}
+            </div>
 
-                <div class="grid gap-4 sm:grid-cols-2">
-                    {{ form_row(insurance_form.startDate, {attr: {'data-scan-field': 'startDate'}}) }}
-                    {{ form_row(insurance_form.endDate, {attr: {'data-scan-field': 'endDate'}}) }}
-                </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+                {{ form_row(insurance_form.startDate, {attr: {'data-scan-field': 'startDate'}}) }}
+                {{ form_row(insurance_form.endDate, {attr: {'data-scan-field': 'endDate'}}) }}
+            </div>
 
-                {{ form_row(insurance_form.premium, {attr: {'data-scan-field': 'premium'}}) }}
+            {{ form_row(insurance_form.premium, {attr: {'data-scan-field': 'premium'}}) }}
 
-                <div class="mt-6 flex items-center justify-end gap-3 pt-2">
+            <div class="mt-6 flex items-center justify-end gap-3 pt-2">
+                <button
+                    type="button"
+                    data-action="modal#close"
+                    class="h-12 cursor-pointer rounded-xl px-5 font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                >
+                    Annuler
+                </button>
+                <button
+                    type="submit"
+                    class="flex h-12 cursor-pointer items-center gap-2 rounded-xl bg-primary px-6 font-semibold text-primary-foreground transition hover:-translate-y-0.5"
+                >
+                    {{ ux_icon('lucide:plus', {class: 'size-4'}) }}
+                    Enregistrer
+                </button>
+            </div>
+            {{ form_end(insurance_form) }}
+        </div>
+    </div>
+
+
+    {# Fenêtre modale d'aperçu de document (PDF ou Image) #}
+    <div
+        id="modal-viewer"
+        data-modal-target="dialog"
+        data-action="click->modal#closeOnBackdrop"
+        class="fixed inset-0 z-50 hidden items-center justify-center bg-primary/40 p-4 backdrop-blur-md transition"
+    >
+        <div class="relative flex h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-background shadow-2xl animate-rise">
+            <div class="flex items-center justify-between border-b border-border px-6 py-4">
+                <h3 data-modal-target="docTitle" class="truncate pr-4 font-display text-lg font-bold sm:text-xl">
+                    Aperçu du document
+                </h3>
+
+                <div class="flex items-center gap-2">
+                    <a
+                        data-modal-target="docDownload"
+                        href="#"
+                        download
+                        class="grid size-10 place-items-center rounded-full bg-secondary text-foreground transition hover:bg-border"
+                        title="Télécharger le fichier"
+                    >
+                        {{ ux_icon('lucide:download', {class: 'size-4'}) }}
+                    </a>
                     <button
                         type="button"
                         data-action="modal#close"
-                        class="h-12 cursor-pointer rounded-xl px-5 font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                        class="grid size-10 cursor-pointer place-items-center rounded-full bg-secondary text-foreground transition hover:bg-border"
+                        aria-label="Fermer"
                     >
-                        Annuler
-                    </button>
-                    <button
-                        type="submit"
-                        class="flex h-12 cursor-pointer items-center gap-2 rounded-xl bg-primary px-6 font-semibold text-primary-foreground transition hover:-translate-y-0.5"
-                    >
-                        {{ ux_icon('lucide:plus', {class: 'size-4'}) }}
-                        Enregistrer
+                        {{ ux_icon('lucide:x', {class: 'size-5'}) }}
                     </button>
                 </div>
-                {{ form_end(insurance_form) }}
+            </div>
+
+            <div class="flex flex-1 items-center justify-center overflow-auto bg-muted/50 p-4">
+                <img
+                    data-modal-target="docImage"
+                    src=""
+                    alt="Facture"
+                    class="hidden max-h-full max-w-full rounded-xl object-contain shadow-sm"
+                >
+                <iframe
+                    data-modal-target="docPdf"
+                    src=""
+                    class="hidden h-full w-full rounded-xl border-0 bg-white"
+                    title="Aperçu PDF"
+                ></iframe>
             </div>
         </div>
-
-
-        {# Fenêtre modale d'aperçu de document (PDF ou Image) #}
-        <div
-            id="modal-viewer"
-            data-modal-target="dialog"
-            data-action="click->modal#closeOnBackdrop"
-            class="fixed inset-0 z-50 hidden items-center justify-center bg-primary/40 p-4 backdrop-blur-md transition"
-        >
-            <div class="relative flex h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-background shadow-2xl animate-rise">
-                <div class="flex items-center justify-between border-b border-border px-6 py-4">
-                    <h3 data-modal-target="docTitle" class="truncate pr-4 font-display text-lg font-bold sm:text-xl">
-                        Aperçu du document
-                    </h3>
-
-                    <div class="flex items-center gap-2">
-                        <a
-                            data-modal-target="docDownload"
-                            href="#"
-                            download
-                            class="grid size-10 place-items-center rounded-full bg-secondary text-foreground transition hover:bg-border"
-                            title="Télécharger le fichier"
-                        >
-                            {{ ux_icon('lucide:download', {class: 'size-4'}) }}
-                        </a>
-                        <button
-                            type="button"
-                            data-action="modal#close"
-                            class="grid size-10 cursor-pointer place-items-center rounded-full bg-secondary text-foreground transition hover:bg-border"
-                            aria-label="Fermer"
-                        >
-                            {{ ux_icon('lucide:x', {class: 'size-5'}) }}
-                        </button>
-                    </div>
-                </div>
-
-                <div class="flex flex-1 items-center justify-center overflow-auto bg-muted/50 p-4">
-                    <img
-                        data-modal-target="docImage"
-                        src=""
-                        alt="Facture"
-                        class="hidden max-h-full max-w-full rounded-xl object-contain shadow-sm"
-                    >
-                    <iframe
-                        data-modal-target="docPdf"
-                        src=""
-                        class="hidden h-full w-full rounded-xl border-0 bg-white"
-                        title="Aperçu PDF"
-                    ></iframe>
-                </div>
-            </div>
-        </div>
+    </div>
     </div>
 {% endblock %}
