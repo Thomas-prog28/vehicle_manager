@@ -95,7 +95,7 @@ PROMPT;
      *
      * @return array{insurer: ?string, contractNumber: ?string, startDate: ?string, endDate: ?string, premium: ?float}
      */
-        public function analyzeInsurance(UploadedFile $file, ?string $vehiclePlate = null, ?string $vehicleLabel = null): array
+    public function analyzeInsurance(UploadedFile $file, ?string $vehiclePlate = null, ?string $vehicleLabel = null): array
     {
         $mimeType = $file->getMimeType() ?? 'application/pdf';
         $base64Data = base64_encode(file_get_contents($file->getPathname()));
@@ -184,6 +184,102 @@ PROMPT;
             'startDate' => isset($data['startDate']) && is_string($data['startDate']) ? $data['startDate'] : null,
             'endDate' => isset($data['endDate']) && is_string($data['endDate']) ? $data['endDate'] : null,
             'premium' => isset($data['premium']) && is_numeric($data['premium']) ? (float) $data['premium'] : null,
+        ];
+    }
+
+    /**
+     * Analyse simultanément la photo de l'écran de pompe et la photo du compteur kilométrique.
+     *
+     * @return array{liters: ?float, priceLiter: ?float, totalPrice: ?float, mileage: ?int, stationName: ?string}
+     */
+    public function analyzeFuelPhotos(UploadedFile $pumpPhoto, UploadedFile $odometerPhoto, ?string $gpsLocation = null): array
+    {
+        $pumpMime = $pumpPhoto->getMimeType() ?? 'image/jpeg';
+        $pumpBase64 = base64_encode(file_get_contents($pumpPhoto->getPathname()));
+
+        $odoMime = $odometerPhoto->getMimeType() ?? 'image/jpeg';
+        $odoBase64 = base64_encode(file_get_contents($odometerPhoto->getPathname()));
+
+        $gpsHint = $gpsLocation
+            ? "Position GPS du véhicule au moment du plein : {$gpsLocation}. Utilise cette localisation (et tout logo visible sur la pompe) pour déduire le nom de la station et la ville dans 'stationName'."
+            : "Déduis le nom de la station s'il est visible sur la photo, sinon mets null.";
+
+        $prompt = <<<PROMPT
+Tu reçois 2 photos prises lors d'un plein de carburant :
+- Image 1 : l'afficheur de la pompe à carburant.
+- Image 2 : le tableau de bord / compteur kilométrique du véhicule.
+
+{$gpsHint}
+
+Extrais uniquement les 5 informations suivantes :
+1. "liters" : la quantité de carburant distribuée en litres (nombre décimal avec un point, ex: 42.50). Si illisible, mets null.
+2. "priceLiter" : le prix au litre affiché sur la pompe (nombre décimal à 3 chiffres après la virgule, ex: 1.749). Si illisible, mets null.
+3. "totalPrice" : le montant total à payer en euros affiché sur la pompe (nombre décimal avec un point, ex: 74.33). Si illisible, mets null.
+4. "mileage" : le kilométrage totalisateur lu sur le compteur (nombre entier uniquement, ex: 133890 — ne prends pas le compteur journalier trip). Si illisible, mets null.
+5. "stationName" : le nom ou l'enseigne de la station + ville (ex: "TotalEnergies - Dreux").
+
+Réponds uniquement avec le JSON demandé, sans texte autour.
+PROMPT;
+
+        $host = 'generativelanguage' . '.' . 'googleapis' . '.' . 'com';
+        $path = '/v1beta/models/gemini-3.1-flash-lite:generateContent';
+        $endpoint = 'https://' . $host . $path;
+
+        $response = $this->httpClient->request(
+            'POST',
+            $endpoint,
+            [
+                'timeout' => 60,
+                'max_duration' => 60,
+                'extra' => [
+                    'curl' => [
+                        \CURLOPT_IPRESOLVE => \CURL_IPRESOLVE_V4,
+                    ],
+                ],
+                'query' => ['key' => $this->geminiApiKey],
+                'json' => [
+                    'contents' => [
+                        [
+                            'parts' => [
+                                ['text' => $prompt],
+                                ['inline_data' => ['mime_type' => $pumpMime, 'data' => $pumpBase64]],
+                                ['inline_data' => ['mime_type' => $odoMime, 'data' => $odoBase64]],
+                            ],
+                        ],
+                    ],
+                    'generationConfig' => [
+                        'response_mime_type' => 'application/json',
+                        'response_schema' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'liters' => ['type' => 'NUMBER', 'nullable' => true],
+                                'priceLiter' => ['type' => 'NUMBER', 'nullable' => true],
+                                'totalPrice' => ['type' => 'NUMBER', 'nullable' => true],
+                                'mileage' => ['type' => 'INTEGER', 'nullable' => true],
+                                'stationName' => ['type' => 'STRING', 'nullable' => true],
+                            ],
+                        ],
+                    ],
+                ],
+            ]
+        );
+
+        $payload = $response->toArray(false);
+        if (isset($payload['error'])) {
+            throw new \RuntimeException($payload['error']['message'] ?? 'Erreur API Gemini');
+        }
+
+        $firstCandidate = $payload['candidates'][0] ?? [];
+        $firstPart = $firstCandidate['content']['parts'][0] ?? [];
+        $rawJson = $firstPart['text'] ?? '{}';
+        $data = json_decode($rawJson, true) ?? [];
+
+        return [
+            'liters' => isset($data['liters']) && is_numeric($data['liters']) ? (float) $data['liters'] : null,
+            'priceLiter' => isset($data['priceLiter']) && is_numeric($data['priceLiter']) ? (float) $data['priceLiter'] : null,
+            'totalPrice' => isset($data['totalPrice']) && is_numeric($data['totalPrice']) ? (float) $data['totalPrice'] : null,
+            'mileage' => isset($data['mileage']) && is_numeric($data['mileage']) ? (int) $data['mileage'] : null,
+            'stationName' => isset($data['stationName']) && is_string($data['stationName']) ? mb_substr($data['stationName'], 0, 100) : null,
         ];
     }
 }

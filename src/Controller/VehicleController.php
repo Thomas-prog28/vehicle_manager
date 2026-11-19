@@ -7,12 +7,14 @@ use App\Entity\User;
 use App\Entity\Vehicle;
 use App\Entity\Covered;
 use App\Entity\Insurance;
+use App\Entity\FuelLog;
 use App\Form\InsuranceCoverageType;
 use App\Form\InvoiceType;
 use App\Form\VehicleType;
 use App\Service\InvoiceAnalyzerService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,6 +24,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\String\Slugger\SluggerInterface;
+
 
 #[IsGranted('ROLE_USER')]
 final class VehicleController extends AbstractController
@@ -191,5 +194,110 @@ final class VehicleController extends AbstractController
                 'error' => $e->getMessage(),
             ], Response::HTTP_BAD_GATEWAY);
         }
+    }
+
+    #[Route('/vehicle/{id}/fuel/quick', name: 'app_vehicle_fuel_quick', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function quickFuel(
+        Vehicle $vehicle,
+        Request $request,
+        EntityManagerInterface $em,
+        InvoiceAnalyzerService $analyzer,
+        HttpClientInterface $httpClient,
+        #[CurrentUser] User $user
+    ): JsonResponse {
+        if ($vehicle->getUser() !== $user) {
+            return $this->json(['error' => 'Accès refusé.'], Response::HTTP_FORBIDDEN);
+        }
+
+        /** @var UploadedFile|null $pumpPhoto */
+        $pumpPhoto = $request->files->get('pumpPhoto');
+        /** @var UploadedFile|null $odometerPhoto */
+        $odometerPhoto = $request->files->get('odometerPhoto');
+
+        if (!$pumpPhoto?->isValid() || !$odometerPhoto?->isValid()) {
+            return $this->json(['error' => 'Les deux photos (pompe et compteur) sont obligatoires.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // 1. Recherche de la station-service la plus proche via l'API officielle des carburants
+        $gpsLocation = null;
+        $lat = $request->request->get('lat');
+        $lon = $request->request->get('lon');
+
+        if ($lat && $lon) {
+            try {
+                $lonFormatted = number_format((float) $lon, 6, '.', '');
+                $latFormatted = number_format((float) $lat, 6, '.', '');
+
+                $hostGov = 'data' . '.' . 'economie' . '.' . 'gouv' . '.' . 'fr';
+                $pathGov = '/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/records';
+
+                $fuelApi = $httpClient->request('GET', 'https://' . $hostGov . $pathGov, [
+                    'query' => [
+                        'where' => "within_distance(geom, geom'POINT({$lonFormatted} {$latFormatted})', 3km)",
+                        'limit' => 1,
+                    ],
+                    'timeout' => 8,
+                    'extra' => [
+                        'curl' => [
+                            \CURLOPT_IPRESOLVE => \CURL_IPRESOLVE_V4,
+                        ],
+                    ],
+                ])->toArray(false);
+
+                $results = $fuelApi['results'] ?? [];
+                $station = $results[0] ?? null;
+                if ($station) {
+                    $adresse = $station['adresse'] ?? '';
+                    $ville = $station['ville'] ?? '';
+                    $gpsLocation = trim($adresse . ' - ' . $ville, ' -');
+                }
+            } catch (\Throwable) {
+                // On continue sans bloquer
+            }
+        }
+
+
+        // 2. Analyse des 2 photos par Gemini
+        try {
+            $extracted = $analyzer->analyzeFuelPhotos($pumpPhoto, $odometerPhoto, $gpsLocation);
+        } catch (\Throwable $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_GATEWAY);
+        }
+
+
+        if (!$extracted['liters'] || !$extracted['totalPrice'] || !$extracted['mileage']) {
+            return $this->json([
+                'error' => 'Certains chiffres étaient illisibles sur les photos (litres, total ou compteur).',
+                'extracted' => $extracted,
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $priceLiter = $extracted['priceLiter'] ?? round($extracted['totalPrice'] / $extracted['liters'], 3);
+
+        // 3. Calcul automatique de la consommation (L/100 km) par rapport au dernier plein enregistré
+        $consumption = null;
+        $previousLog = $vehicle->getFuelLogs()->first(); // Trié par filledAt DESC
+        if ($previousLog && $extracted['mileage'] > $previousLog->getMileage()) {
+            $distance = $extracted['mileage'] - $previousLog->getMileage();
+            $consumption = round(($extracted['liters'] * 100) / $distance, 2);
+        }
+
+        // 4. Enregistrement en base de données
+        $fuelLog = new FuelLog();
+        $fuelLog->setVehicle($vehicle);
+        $fuelLog->setFilledAt(new \DateTimeImmutable());
+        $fuelLog->setStationName($extracted['stationName'] ?: $gpsLocation);
+        $fuelLog->setLiters(number_format($extracted['liters'], 2, '.', ''));
+        $fuelLog->setPriceLiter(number_format($priceLiter, 3, '.', ''));
+        $fuelLog->setTotalPrice(number_format($extracted['totalPrice'], 2, '.', ''));
+        $fuelLog->setMileage($extracted['mileage']);
+        if ($consumption !== null) {
+            $fuelLog->setConsumption(number_format($consumption, 2, '.', ''));
+        }
+
+        $em->persist($fuelLog);
+        $em->flush();
+
+        return $this->json(['success' => true]);
     }
 }

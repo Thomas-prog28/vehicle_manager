@@ -3,7 +3,7 @@
 {% block title %}Mon garage — Tableau de bord{% endblock %}
 
 {% block body %}
-    <div class="min-h-screen" data-controller="modal" data-modal-open-value="{{ open_modal|default(false) ? 'true' : 'false' }}" data-action="keydown.esc@window->modal#closeOnEscape">
+    <div class="min-h-screen" data-controller="modal fuel-quick" data-modal-open-value="{{ open_modal|default(false) ? 'true' : 'false' }}" data-action="keydown.esc@window->modal#closeOnEscape">
         {# En-tête #}
         <header class="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
             <a href="{{ path('app_dashboard') }}" class="flex items-center gap-2 font-display text-2xl font-bold">
@@ -42,10 +42,26 @@
                     </h1>
                 </div>
 
-                <button type="button" data-action="modal#open" class="flex h-12 cursor-pointer items-center gap-2 rounded-full bg-primary px-6 font-semibold text-primary-foreground transition hover:-translate-y-0.5">
-                    {{ ux_icon('lucide:plus', {class: 'size-5'}) }}
-                    Ajouter un véhicule
-                </button>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button
+                        type="button"
+                        data-action="fuel-quick#start"
+                        class="flex h-12 cursor-pointer items-center gap-2 rounded-full bg-brand px-6 font-semibold text-brand-foreground shadow-sm transition hover:-translate-y-0.5"
+                    >
+                        {{ ux_icon('lucide:fuel', {class: 'size-5'}) }}
+                        Faire le plein
+                    </button>
+
+                    <button
+                        type="button"
+                        data-action="modal#open"
+                        class="flex h-12 cursor-pointer items-center gap-2 rounded-full bg-primary px-6 font-semibold text-primary-foreground transition hover:-translate-y-0.5"
+                    >
+                        {{ ux_icon('lucide:plus', {class: 'size-5'}) }}
+                        Ajouter un véhicule
+                    </button>
+                </div>
+
 
             </section>
 
@@ -68,6 +84,49 @@
                     :hot="true"
                 />
             </section>
+
+            {% if last_fuel_log %}
+                <section class="mb-10 rounded-3xl bg-card p-6 shadow-sm animate-rise">
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+                        <div class="flex items-center gap-3">
+                            <span class="grid size-11 place-items-center rounded-2xl bg-brand/10 text-brand">
+                                {{ ux_icon('lucide:fuel', {class: 'size-5'}) }}
+                            </span>
+                            <div>
+                                <p class="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                                    Dernier plein • {{ last_fuel_log.vehicle.brand }} {{ last_fuel_log.vehicle.model }}
+                                </p>
+                                <p class="font-semibold">
+                                    {{ last_fuel_log.stationName ?: 'Station non localisée' }}
+                                    <span class="text-xs font-normal text-muted-foreground">({{ last_fuel_log.filledAt|date('d/m/Y') }})</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-6 sm:flex sm:items-center sm:gap-8">
+                            <div>
+                                <span class="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Total</span>
+                                <span class="font-display text-xl font-bold">{{ last_fuel_log.totalPrice|number_format(2, ',', ' ') }} €</span>
+                            </div>
+                            <div>
+                                <span class="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Quantité</span>
+                                <span class="font-display text-xl font-bold">{{ last_fuel_log.liters|number_format(2, ',', ' ') }} L</span>
+                            </div>
+                            <div>
+                                <span class="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Prix / L</span>
+                                <span class="font-display text-xl font-bold">{{ last_fuel_log.priceLiter|number_format(3, ',', ' ') }} €</span>
+                            </div>
+                            <div>
+                                <span class="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Conso moy.</span>
+                                <span class="font-display text-xl font-bold text-brand">
+                                    {{ last_fuel_log.consumption ? last_fuel_log.consumption|number_format(2, ',', ' ') ~ ' L/100' : '—' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            {% endif %}
+
 
             {# Grille des véhicules #}
             <section class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -130,6 +189,55 @@
                 {{ form_end(form) }}
             </div>
         </div>
+
+        {# Fenêtre modale avec fond flou pour la prise de photo du plein #}
+        <div data-fuel-quick-target="dialog" class="fixed inset-0 z-50 hidden items-center justify-center bg-primary/40 p-4 backdrop-blur-md">
+            <div class="relative w-full max-w-md rounded-3xl bg-background p-6 shadow-2xl sm:p-8 animate-rise">
+                <button type="button" data-action="fuel-quick#close" class="absolute right-5 top-5 grid size-9 cursor-pointer place-items-center rounded-full bg-secondary">
+                    {{ ux_icon('lucide:x', {class: 'size-4'}) }}
+                </button>
+
+                {# Inputs cachés déclenchant directement l'appareil photo arrière sur mobile #}
+                <input type="file" accept="image/*" capture="environment" data-fuel-quick-target="pumpInput" data-action="change->fuel-quick#onPumpCaptured" class="hidden">
+                <input type="file" accept="image/*" capture="environment" data-fuel-quick-target="odometerInput" data-action="change->fuel-quick#onOdometerCaptured" class="hidden">
+
+                <div data-fuel-quick-target="step1" class="space-y-5">
+                    <h2 class="font-display text-2xl font-bold">Faire le plein (1/2)</h2>
+                    <div>
+                        <label class="mb-2 block font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Véhicule</label>
+                        <select data-fuel-quick-target="vehicleSelect" class="h-12 w-full rounded-xl border border-input bg-card px-4 text-sm">
+                            {% for v in vehicles %}
+                                <option value="{{ path('app_vehicle_fuel_quick', {id: v.id}) }}">{{ v.brand }} {{ v.model }} ({{ v.plate }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="button" data-action="fuel-quick#triggerPumpCamera" class="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-brand font-semibold text-brand-foreground">
+                        {{ ux_icon('lucide:camera', {class: 'size-5'}) }}
+                        1. Photographier la pompe
+                    </button>
+                </div>
+
+                <div data-fuel-quick-target="step2" class="hidden space-y-5 text-center">
+                    <span class="mx-auto grid size-14 place-items-center rounded-full bg-brand/15 text-brand">
+                        {{ ux_icon('lucide:camera', {class: 'size-7'}) }}
+                    </span>
+                    <h2 class="font-display text-2xl font-bold">Photo pompe OK (2/2)</h2>
+                    <p class="text-sm text-muted-foreground">Prends maintenant en photo ton compteur kilométrique.</p>
+                    <button type="button" data-action="fuel-quick#triggerOdometerCamera" class="flex h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-primary font-semibold text-primary-foreground">
+                        {{ ux_icon('lucide:camera', {class: 'size-5'}) }}
+                        2. Photographier le compteur
+                    </button>
+                </div>
+
+                <div data-fuel-quick-target="loading" class="hidden py-8 text-center space-y-3">
+                    <p class="font-display text-xl font-bold">Analyse IA & calcul conso...</p>
+                    <p class="text-sm text-muted-foreground">Lecture de la pompe, du compteur et localisation GPS en cours.</p>
+                </div>
+
+                <p data-fuel-quick-target="error" class="mt-4 hidden rounded-xl bg-alert/10 p-3 text-sm font-semibold text-alert"></p>
+            </div>
+        </div>
+
     </div>
 {% endblock %}
 

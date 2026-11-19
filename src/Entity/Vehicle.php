@@ -57,10 +57,21 @@ class Vehicle
     #[ORM\OrderBy(['invoiceDate' => 'DESC', 'id' => 'DESC'])]
     private Collection $invoices;
 
+    #[ORM\Column(length: 15, nullable: true)]
+    private ?string $fuelType = null;
+
+    /**
+     * @var Collection<int, FuelLog>
+     */
+    #[ORM\OneToMany(targetEntity: FuelLog::class, mappedBy: 'vehicle', orphanRemoval: true)]
+    #[ORM\OrderBy(['filledAt' => 'DESC', 'id' => 'DESC'])]
+    private Collection $fuelLogs;
+
     public function __construct()
     {
         $this->invoices = new ArrayCollection();
         $this->coverages = new ArrayCollection();
+        $this->fuelLogs = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -181,14 +192,25 @@ class Vehicle
 
     public function getCurrentMileage(): int
     {
+        $invoiceKm = 0;
         foreach ($this->invoices as $invoice) {
             if ($invoice->getMileage() !== null) {
-                return $invoice->getMileage();
+                $invoiceKm = $invoice->getMileage();
+                break;
             }
         }
 
-        return 0;
+        $fuelKm = 0;
+        foreach ($this->fuelLogs as $fuelLog) {
+            if ($fuelLog->getMileage() !== null) {
+                $fuelKm = $fuelLog->getMileage();
+                break;
+            }
+        }
+
+        return max($invoiceKm, $fuelKm);
     }
+
 
     public function getUser(): ?User
     {
@@ -226,6 +248,48 @@ class Vehicle
             // set the owning side to null (unless already changed)
             if ($coverage->getVehicle() === $this) {
                 $coverage->setVehicle(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getFuelType(): ?string
+    {
+        return $this->fuelType;
+    }
+
+    public function setFuelType(?string $fuelType): static
+    {
+        $this->fuelType = $fuelType;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, FuelLog>
+     */
+    public function getFuelLogs(): Collection
+    {
+        return $this->fuelLogs;
+    }
+
+    public function addFuelLog(FuelLog $fuelLog): static
+    {
+        if (!$this->fuelLogs->contains($fuelLog)) {
+            $this->fuelLogs->add($fuelLog);
+            $fuelLog->setVehicle($this);
+        }
+
+        return $this;
+    }
+
+    public function removeFuelLog(FuelLog $fuelLog): static
+    {
+        if ($this->fuelLogs->removeElement($fuelLog)) {
+            // set the owning side to null (unless already changed)
+            if ($fuelLog->getVehicle() === $this) {
+                $fuelLog->setVehicle(null);
             }
         }
 

@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Repository\VehicleRepository;
+use App\Repository\FuelLogRepository;
 use App\Entity\Vehicle;
 use App\Form\VehicleType;
 use Doctrine\ORM\EntityManagerInterface;
@@ -17,7 +18,8 @@ final class DashboardController extends AbstractController
     public function index(
         Request $request,
         EntityManagerInterface $em,
-        VehicleRepository $vehicleRepository
+        VehicleRepository $vehicleRepository,
+        FuelLogRepository $fuelLogRepository
     ): Response {
         $vehicle = new Vehicle();
         $form = $this->createForm(VehicleType::class, $vehicle);
@@ -66,11 +68,16 @@ final class DashboardController extends AbstractController
             }
         }
 
+        $lastFuelLog = !empty($vehicles)
+            ? $fuelLogRepository->findOneBy(['vehicle' => $vehicles], ['filledAt' => 'DESC', 'id' => 'DESC'])
+            : null;
+
         return $this->render('dashboard/index.html.twig', [
             'vehicles' => $vehicles,
             'total_insurance' => $totalInsurance,
             'total_expenses' => $totalExpensesYear,
             'alerts_count' => $alertsCount,
+            'last_fuel_log' => $lastFuelLog,
             'form' => $form,
             'open_modal' => $form->isSubmitted() && !$form->isValid(),
         ]);
