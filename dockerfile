@@ -1,6 +1,6 @@
-FROM dunglas/frankenphp:1-php8.4-alpine
+FROM dunglas/frankenphp:1-php8.4-bookworm
 
-# Extensions PHP requises par Symfony + PostgreSQL + images
+# Extensions PHP requises par Symfony + PostgreSQL + traitement d'images
 RUN install-php-extensions \
     pdo_pgsql \
     intl \
@@ -22,10 +22,19 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 # Copie du code de l'application
 COPY . .
 
-# Compilation des assets (Tailwind CSS + Importmap) et cache Symfony
-RUN php bin/console tailwind:build --minify \
-    && php bin/console asset-map:compile \
-    && php bin/console cache:warmup
+# Compilation des assets (Tailwind CSS + Importmap) et cache Symfony avec variables factices de build
+RUN APP_SECRET=build_secret \
+    DATABASE_URL="postgresql://user:pass@localhost:5432/db?serverVersion=16&charset=utf8" \
+    GEMINI_API_KEY=build_key \
+    php bin/console tailwind:build --minify \
+    && APP_SECRET=build_secret \
+    DATABASE_URL="postgresql://user:pass@localhost:5432/db?serverVersion=16&charset=utf8" \
+    GEMINI_API_KEY=build_key \
+    php bin/console asset-map:compile \
+    && APP_SECRET=build_secret \
+    DATABASE_URL="postgresql://user:pass@localhost:5432/db?serverVersion=16&charset=utf8" \
+    GEMINI_API_KEY=build_key \
+    php bin/console cache:warmup
 
 # Script de démarrage (migrations BDD + lancement serveur)
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
