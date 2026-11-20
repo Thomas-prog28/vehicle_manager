@@ -23,7 +23,7 @@
                     {% endif %}
                 </button>
 
-                <a href="{{ logout_path() }}" class="grid size-11 place-items-center rounded-full bg-card shadow-sm transition hover:bg-secondary" aria-label="Déconnexion">
+                <a href="{{ logout_path() }}" data-turbo="false" class="grid size-11 place-items-center rounded-full bg-card shadow-sm transition hover:bg-secondary" aria-label="Déconnexion">
                     {{ ux_icon('lucide:log-out', {class: 'size-5'}) }}
                 </a>
             </div>

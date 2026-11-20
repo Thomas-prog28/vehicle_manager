@@ -26,8 +26,14 @@
             <script src="https://cdn.jsdelivr.net/npm/idiomorph"></script>
             <script src="https://cdn.jsdelivr.net/npm/frankenphp-hot-reload/+esm" type="module"></script>
         {% endif %}
+
+        {% if app.user %}
+            <meta name="turbo-cache-control" content="no-store">
+        {% endif %}
+
     </head>
-    <body>
+    <body {{ app.user ? 'data-controller="bfcache"' : '' }} class="bg-background text-foreground antialiased">
+
         {% block body %}{% endblock %}
 
         <script>
@@ -37,6 +43,22 @@
                 });
             }
         </script>
+
+        {% if app.user %}
+            <script>
+                window.addEventListener("pageshow", function (event) {
+                    const navEntries = performance.getEntriesByType("navigation");
+                    const isBackForward = navEntries.some(
+                        (entry) => entry.type === "back_forward",
+                    );
+
+                    if (event.persisted || isBackForward) {
+                        window.location.reload();
+                    }
+                });
+            </script>
+        {% endif %}
+
 
     </body>
 </html>
