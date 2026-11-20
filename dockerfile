@@ -57,4 +57,6 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 10000
 
+RUN setcap -r /usr/local/bin/frankenphp || true
+
 ENTRYPOINT ["docker-entrypoint.sh"]
