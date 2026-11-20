@@ -28,6 +28,13 @@ RUN APP_SECRET=build_secret \
     GEMINI_API_KEY=build_key \
     MAILER_DSN=null://null \
     MESSENGER_TRANSPORT_DSN=doctrine://default \
+    php bin/console importmap:install
+
+RUN APP_SECRET=build_secret \
+    DATABASE_URL="postgresql://user:pass@localhost:5432/db?serverVersion=16&charset=utf8" \
+    GEMINI_API_KEY=build_key \
+    MAILER_DSN=null://null \
+    MESSENGER_TRANSPORT_DSN=doctrine://default \
     php bin/console tailwind:build --minify
 
 RUN APP_SECRET=build_secret \
