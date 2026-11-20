@@ -3,90 +3,100 @@
 {% block title %}Garage — Connexion{% endblock %}
 
 {% block body %}
-<div class="grid min-h-screen lg:grid-cols-2">
-    {# Panneau gauche sombre (ordinateur) #}
-    <section class="relative hidden overflow-hidden bg-primary p-12 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
-        <div class="flex items-center gap-2 font-display text-2xl font-bold">
-            <span class="grid size-10 place-items-center rounded-xl bg-brand text-brand-foreground">
-                {{ ux_icon('lucide:car', {class: 'size-5'}) }}
-            </span>
-            Garage
-        </div>
-
-        <h1 class="font-display text-7xl font-semibold leading-[0.95] animate-rise">
-            Tes véhicules.<br>
-            <span class="text-brass">Sous contrôle.</span>
-        </h1>
-
-        <p class="max-w-sm text-primary-foreground/75">
-            Entretiens, factures, échéances d'assurance : tout au même endroit, rien n'est oublié.
-        </p>
-
-        <div class="pointer-events-none absolute -right-24 -top-24 size-80 rounded-full bg-brand/30 blur-3xl"></div>
-    </section>
-
-    {# Panneau droit : Formulaire de connexion #}
-    <section class="flex items-center justify-center p-6 sm:p-8">
-        <form method="post" class="w-full max-w-sm space-y-6 animate-rise">
-            {# Logo visible uniquement sur mobile #}
-            <div class="flex items-center gap-2 font-display text-2xl font-bold lg:hidden">
-                <span class="grid size-10 place-items-center rounded-xl bg-primary text-brass">
+    <div class="grid min-h-screen lg:grid-cols-2">
+        {# Panneau gauche sombre (ordinateur) #}
+        <section class="relative hidden overflow-hidden bg-primary p-12 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
+            <div class="flex items-center gap-2 font-display text-2xl font-bold">
+                <span class="grid size-10 place-items-center rounded-xl bg-brand text-brand-foreground">
                     {{ ux_icon('lucide:car', {class: 'size-5'}) }}
                 </span>
                 Garage
             </div>
 
-            <div>
-                <h2 class="font-display text-4xl font-semibold">Bon retour</h2>
-                <p class="mt-2 text-muted-foreground">Connecte-toi pour retrouver ton garage.</p>
-            </div>
+            <h1 class="font-display text-7xl font-semibold leading-[0.95] animate-rise">
+                Tes véhicules.<br>
+                <span class="text-brass">Sous contrôle.</span>
+            </h1>
 
-            {% if error %}
-                <div class="rounded-xl bg-alert/10 p-3.5 text-sm font-semibold text-alert">
-                    {{ error.messageKey|trans(error.messageData, 'security') }}
+            <p class="max-w-sm text-primary-foreground/75">
+                Entretiens, factures, échéances d'assurance : tout au même endroit, rien n'est oublié.
+            </p>
+
+            <div class="pointer-events-none absolute -right-24 -top-24 size-80 rounded-full bg-brand/30 blur-3xl"></div>
+        </section>
+
+        {# Panneau droit : Formulaire de connexion #}
+        <section class="flex items-center justify-center p-6 sm:p-8">
+            <form method="post" class="w-full max-w-sm space-y-6 animate-rise">
+                {# Logo visible uniquement sur mobile #}
+                <div class="flex items-center gap-2 font-display text-2xl font-bold lg:hidden">
+                    <span class="grid size-10 place-items-center rounded-xl bg-primary text-brass">
+                        {{ ux_icon('lucide:car', {class: 'size-5'}) }}
+                    </span>
+                    Garage
                 </div>
-            {% endif %}
 
-            <label class="block space-y-2">
-                <span class="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Email</span>
-                <input
-                    type="email"
-                    name="_username"
-                    value="{{ last_username }}"
-                    placeholder="toi@email.fr"
-                    autocomplete="email"
-                    required
-                    autofocus
-                    class="h-12 w-full rounded-xl border border-input bg-card px-4 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-ring/30"
-                >
-            </label>
+                <div>
+                    <h2 class="font-display text-4xl font-semibold">Bon retour</h2>
+                    <p class="mt-2 text-muted-foreground">Connecte-toi pour retrouver ton garage.</p>
+                </div>
 
-            <label class="block space-y-2">
-                <span class="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Mot de passe</span>
-                <input
-                    type="password"
-                    name="_password"
-                    placeholder="••••••••"
-                    autocomplete="current-password"
-                    required
-                    class="h-12 w-full rounded-xl border border-input bg-card px-4 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-ring/30"
-                >
-            </label>
+                {% if error %}
+                    <div class="rounded-xl bg-alert/10 p-3.5 text-sm font-semibold text-alert">
+                        {{ error.messageKey|trans(error.messageData, 'security') }}
+                    </div>
+                {% endif %}
 
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                <label class="block space-y-2">
+                    <span class="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Email</span>
+                    <input
+                        type="email"
+                        name="_username"
+                        value="{{ last_username }}"
+                        placeholder="toi@email.fr"
+                        autocomplete="email"
+                        required
+                        autofocus
+                        class="h-12 w-full rounded-xl border border-input bg-card px-4 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-ring/30"
+                    >
+                </label>
 
-            <button type="submit" class="group flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-primary-foreground transition hover:-translate-y-0.5">
-                Se connecter
-                {{ ux_icon('lucide:arrow-right', {class: 'size-4 transition group-hover:translate-x-1'}) }}
-            </button>
+                <label class="block space-y-2">
+                    <span class="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Mot de passe</span>
+                    <input
+                        type="password"
+                        name="_password"
+                        placeholder="••••••••"
+                        autocomplete="current-password"
+                        required
+                        class="h-12 w-full rounded-xl border border-input bg-card px-4 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-ring/30"
+                    >
+                </label>
 
-            {% if path('app_register') is defined %}
-                <p class="text-center text-sm text-muted-foreground">
-                    Pas encore de compte ?
-                    <a href="{{ path('app_register') }}" class="font-semibold text-brand hover:underline">Créer un garage</a>
-                </p>
-            {% endif %}
-        </form>
-    </section>
-</div>
+                <div class="flex items-center justify-between">
+                    <label for="inputPassword" class="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+                        Mot de passe
+                    </label>
+                    <a href="{{ path('app_forgot_password_request') }}" class="text-xs font-semibold text-brand hover:underline">
+                        Mot de passe oublié ?
+                    </a>
+                </div>
+
+
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                <button type="submit" class="group flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-primary-foreground transition hover:-translate-y-0.5">
+                    Se connecter
+                    {{ ux_icon('lucide:arrow-right', {class: 'size-4 transition group-hover:translate-x-1'}) }}
+                </button>
+
+                {% if path('app_register') is defined %}
+                    <p class="text-center text-sm text-muted-foreground">
+                        Pas encore de compte ?
+                        <a href="{{ path('app_register') }}" class="font-semibold text-brand hover:underline">Créer un garage</a>
+                    </p>
+                {% endif %}
+            </form>
+        </section>
+    </div>
 {% endblock %}

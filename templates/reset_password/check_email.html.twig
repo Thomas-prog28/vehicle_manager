@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Email envoyé — Garage{% endblock %}
+
+{% block body %}
+    <div class="flex min-h-screen items-center justify-center p-6">
+        <div class="w-full max-w-md space-y-6 rounded-3xl bg-card p-8 text-center shadow-sm">
+            <span class="mx-auto grid size-14 place-items-center rounded-2xl bg-brand/15 text-brand">
+                {{ ux_icon('lucide:shield-check', {class: 'size-7'}) }}
+            </span>
+
+            <div class="space-y-2">
+                <h1 class="font-display text-3xl font-bold">Vérifie ta boîte mail</h1>
+                <p class="text-sm text-muted-foreground">
+                    Si un compte correspond à cette adresse, un lien vient d'être envoyé. Il expirera dans
+                    <strong>{{ resetToken.expirationMessageKey|trans(resetToken.expirationMessageData, 'ResetPasswordBundle') }}</strong>.
+                </p>
+            </div>
+
+            <p class="text-xs text-muted-foreground">
+                Rien reçu ? Vérifie tes courriers indésirables ou
+                <a href="{{ path('app_forgot_password_request') }}" class="font-semibold text-brand hover:underline">réessaie</a>.
+            </p>
+
+            <a href="{{ path('app_login') }}" class="flex h-12 w-full items-center justify-center rounded-xl bg-primary font-semibold text-primary-foreground">
+                Retour à la connexion
+            </a>
+        </div>
+    </div>
+{% endblock %}

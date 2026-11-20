@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mot de passe oublié — Garage{% endblock %}
+
+{% block body %}
+    <div class="grid min-h-screen lg:grid-cols-12">
+        {# Panneau gauche sombre #}
+        <aside class="relative flex flex-col justify-between overflow-hidden bg-primary p-8 text-primary-foreground lg:col-span-5 lg:p-12">
+            <a href="{{ path('app_login') }}" class="flex items-center gap-3">
+                <span class="grid size-11 place-items-center rounded-xl bg-accent text-accent-foreground">
+                    {{ ux_icon('lucide:wrench', {class: 'size-5'}) }}
+                </span>
+                <span class="font-display text-2xl font-bold tracking-tight">Garage</span>
+            </a>
+
+            <div class="my-12 space-y-4">
+                <h1 class="font-display text-4xl font-bold leading-[0.95] sm:text-5xl">
+                    Récupération d'accès.
+                </h1>
+                <p class="max-w-sm text-sm opacity-75">
+                    Saisis l'adresse email associée à ton compte pour recevoir un lien de réinitialisation sécurisé valable 1 heure.
+                </p>
+            </div>
+
+            <p class="font-mono text-xs uppercase tracking-widest opacity-50">Sécurité & Session</p>
+        </aside>
+
+        {# Panneau droit : Formulaire #}
+        <main class="flex items-center justify-center p-6 sm:p-12 lg:col-span-7">
+            <div class="w-full max-w-md space-y-8">
+                <div class="space-y-2">
+                    <a href="{{ path('app_login') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground">
+                        {{ ux_icon('lucide:arrow-left', {class: 'size-3.5'}) }}
+                        Retour à la connexion
+                    </a>
+                    <h2 class="font-display text-4xl font-bold">Mot de passe oublié</h2>
+                    <p class="text-sm text-muted-foreground">Nous t'enverrons un lien pour en choisir un nouveau.</p>
+                </div>
+
+                {% for flash_error in app.flashes('reset_password_error') %}
+                    <div class="rounded-2xl bg-alert/10 p-4 text-sm font-semibold text-alert">
+                        {{ flash_error }}
+                    </div>
+                {% endfor %}
+
+                {{ form_start(requestForm, {attr: {class: 'space-y-5'}}) }}
+                    {{ form_row(requestForm.email, {
+                    label: 'Adresse email',
+                    attr: {placeholder: 'toi@exemple.fr', autocomplete: 'email'}
+                }) }}
+
+                    <button type="submit" class="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-6 font-semibold text-primary-foreground transition hover:-translate-y-0.5">
+                        Envoyer le lien de réinitialisation
+                        {{ ux_icon('lucide:arrow-right', {class: 'size-4'}) }}
+                    </button>
+                {{ form_end(requestForm) }}
+            </div>
+        </main>
+    </div>
+{% endblock %}
