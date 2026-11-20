@@ -22,18 +22,26 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 # Copie du code de l'application
 COPY . .
 
-# Compilation des assets (Tailwind CSS + Importmap) et cache Symfony avec variables factices de build
+# Variables factices uniquement pour compiler les assets et le cache
 RUN APP_SECRET=build_secret \
     DATABASE_URL="postgresql://user:pass@localhost:5432/db?serverVersion=16&charset=utf8" \
     GEMINI_API_KEY=build_key \
-    php bin/console tailwind:build --minify \
-    && APP_SECRET=build_secret \
+    MAILER_DSN=null://null \
+    MESSENGER_TRANSPORT_DSN=doctrine://default \
+    php bin/console tailwind:build --minify
+
+RUN APP_SECRET=build_secret \
     DATABASE_URL="postgresql://user:pass@localhost:5432/db?serverVersion=16&charset=utf8" \
     GEMINI_API_KEY=build_key \
-    php bin/console asset-map:compile \
-    && APP_SECRET=build_secret \
+    MAILER_DSN=null://null \
+    MESSENGER_TRANSPORT_DSN=doctrine://default \
+    php bin/console asset-map:compile
+
+RUN APP_SECRET=build_secret \
     DATABASE_URL="postgresql://user:pass@localhost:5432/db?serverVersion=16&charset=utf8" \
     GEMINI_API_KEY=build_key \
+    MAILER_DSN=null://null \
+    MESSENGER_TRANSPORT_DSN=doctrine://default \
     php bin/console cache:warmup
 
 # Script de démarrage (migrations BDD + lancement serveur)
