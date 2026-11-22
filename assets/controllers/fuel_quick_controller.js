@@ -45,14 +45,20 @@ export default class extends Controller {
     }
 
     async onOdometerCaptured() {
-        const pumpFile = this.pumpInputTarget.files[0];
-        const odoFile = this.odometerInputTarget.files[0];
-        if (!pumpFile || !odoFile) return;
+        const rawPumpFile = this.pumpInputTarget.files[0];
+        const rawOdoFile = this.odometerInputTarget.files[0];
+        if (!rawPumpFile || !rawOdoFile) return;
 
         this.step2Target.classList.add('hidden');
         this.loadingTarget.classList.remove('hidden');
 
-        // Si le GPS n'a pas encore fini de répondre, on l'attend brièvement (max 3s)
+        // 1. Compression automatique des 2 photos à 1280px max (~250 Ko) pour éviter le blocage PHP 8 Mo
+        const [pumpFile, odoFile] = await Promise.all([
+            this.compressImage(rawPumpFile, 1280, 0.82),
+            this.compressImage(rawOdoFile, 1280, 0.82),
+        ]);
+
+        // 2. Si le GPS n'a pas encore fini de répondre, on l'attend brièvement (max 3s)
         if (!this.coords.lat && 'geolocation' in navigator) {
             await new Promise((resolve) => {
                 navigator.geolocation.getCurrentPosition(
@@ -103,5 +109,61 @@ export default class extends Controller {
         this.step2Target.classList.add('hidden');
         this.loadingTarget.classList.add('hidden');
         this.errorTarget.classList.add('hidden');
+    }
+
+    compressImage(file, maxDimension, quality) {
+        if (!file || !file.type.startsWith('image/') || file.size <= 600 * 1024) {
+            return Promise.resolve(file);
+        }
+
+        return new Promise((resolve) => {
+            const img = new Image();
+            const objectUrl = URL.createObjectURL(file);
+
+            img.onload = () => {
+                URL.revokeObjectURL(objectUrl);
+
+                let { width, height } = img;
+                if (width > maxDimension || height > maxDimension) {
+                    if (width > height) {
+                        height = Math.round((height * maxDimension) / width);
+                        width = maxDimension;
+                    } else {
+                        width = Math.round((width * maxDimension) / height);
+                        height = maxDimension;
+                    }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob(
+                    (blob) => {
+                        if (!blob) {
+                            resolve(file);
+                            return;
+                        }
+                        const newName = file.name.replace(/\.[^/.]+$/, '') + '.jpg';
+                        resolve(new File([blob], newName, {
+                            type: 'image/jpeg',
+                            lastModified: Date.now(),
+                        }));
+                    },
+                    'image/jpeg',
+                    quality
+                );
+            };
+
+            img.onerror = () => {
+                URL.revokeObjectURL(objectUrl);
+                resolve(file);
+            };
+
+            img.src = objectUrl;
+        });
     }
 }
