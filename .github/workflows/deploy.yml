@@ -32,6 +32,7 @@ jobs:
           echo "GEMINI_API_KEY=fake_ci_key" >> .env.test.local
           echo "MAILER_DSN=null://null" >> .env.test.local
           php bin/console doctrine:schema:create --env=test
+          php bin/console tailwind:build
 
       - name: Lancement des tests PHPUnit
         run: php bin/phpunit
