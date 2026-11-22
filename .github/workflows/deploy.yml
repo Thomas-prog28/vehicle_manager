@@ -31,8 +31,7 @@ jobs:
           echo "DATABASE_URL=sqlite:///%kernel.project_dir%/var/test.db" >> .env.test.local
           echo "GEMINI_API_KEY=fake_ci_key" >> .env.test.local
           echo "MAILER_DSN=null://null" >> .env.test.local
-          php bin/console doctrine:database:create --env=test --if-not-exists
-          php bin/console doctrine:migrations:migrate --env=test --no-interaction
+          php bin/console doctrine:schema:create --env=test
 
       - name: Lancement des tests PHPUnit
         run: php bin/phpunit
