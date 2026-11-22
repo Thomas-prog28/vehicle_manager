@@ -286,7 +286,8 @@
                 {{ form_start(invoice_form, {
     attr: {
         'data-controller': 'invoice-scan',
-        'data-invoice-scan-url-value': path('app_invoice_analyze')
+        'data-invoice-scan-url-value': path('app_invoice_analyze'),
+        'data-action': 'submit->offline-sync#queueFormSubmit'
     }
 }) }}
                 {# Le champ fichier garde data-invoice-scan-target="fileInput" #}
@@ -359,7 +360,8 @@
                     'data-invoice-scan-url-value': path('app_insurance_analyze', {
                         plate: vehicle.plate,
                         vehicle: vehicle.brand ~ ' ' ~ vehicle.model ~ ' (' ~ vehicle.type ~ ')'
-                        })
+                        }),
+                    'data-action': 'submit->offline-sync#queueFormSubmit'
                 }
             }) }}
                 {{ form_row(insurance_form.insuranceFile, {
