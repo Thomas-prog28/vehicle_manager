@@ -257,176 +257,22 @@
                     {% endif %}
                 </section>
             </div>
-    </div>
-    </main>
+    
+        </main>
 
-    {# Fenêtre modale d'ajout de facture #}
-    <div
-        id="modal-invoice"
-        data-modal-target="dialog"
-        data-action="click->modal#closeOnBackdrop"
-        class="fixed inset-0 z-50 hidden items-center justify-center bg-primary/40 p-4 backdrop-blur-md transition"
-    >
-        <div class="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-background p-6 shadow-2xl sm:p-8 animate-rise">
-            <div class="mb-6 flex items-center justify-between">
-                <div>
-                    <h2 class="font-display text-2xl font-bold sm:text-3xl">Nouvelle facture</h2>
-                    <p class="text-sm text-muted-foreground">Enregistre un entretien ou une dépense pour ce véhicule.</p>
-                </div>
-                <button
-                    type="button"
-                    data-action="modal#close"
-                    class="grid size-10 cursor-pointer place-items-center rounded-full bg-secondary text-foreground transition hover:bg-border"
-                    aria-label="Fermer"
-                >
-                    {{ ux_icon('lucide:x', {class: 'size-5'}) }}
-                </button>
-            </div>
-
-            {{ form_start(invoice_form, {
-    attr: {
-        'data-controller': 'invoice-scan',
-        'data-invoice-scan-url-value': path('app_invoice_analyze')
-    }
-}) }}
-            {# Le champ fichier garde data-invoice-scan-target="fileInput" #}
-            {{ form_row(invoice_form.invoiceFile, {
-        attr: {
-            'data-invoice-scan-target': 'fileInput',
-            'data-action': 'change->invoice-scan#scan'
-        }
-    }) }}
-
-            <p data-invoice-scan-target="status" class="mb-4 hidden rounded-xl bg-brand/10 px-3.5 py-2.5 text-xs font-semibold text-brand"></p>
-
-            {# Les 4 champs ci-dessous utilisent maintenant data-scan-field="..." #}
-            {{ form_row(invoice_form.invoiceDate, {attr: {'data-scan-field': 'date'}}) }}
-            {{ form_row(invoice_form.garage, {attr: {'data-scan-field': 'garage'}}) }}
-
-            <div class="grid gap-4 sm:grid-cols-2">
-                {{ form_row(invoice_form.mileage, {attr: {'data-scan-field': 'mileage'}}) }}
-                {{ form_row(invoice_form.totalTTC, {attr: {'data-scan-field': 'totalTTC'}}) }}
-            </div>
-
-            <div class="mt-6 flex items-center justify-end gap-3 pt-2">
-                <button
-                    type="button"
-                    data-action="modal#close"
-                    class="h-12 cursor-pointer rounded-xl px-5 font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-                >
-                    Annuler
-                </button>
-                <button
-                    type="submit"
-                    class="flex h-12 cursor-pointer items-center gap-2 rounded-xl bg-primary px-6 font-semibold text-primary-foreground transition hover:-translate-y-0.5"
-                >
-                    {{ ux_icon('lucide:plus', {class: 'size-4'}) }}
-                    Enregistrer
-                </button>
-            </div>
-            {{ form_end(invoice_form) }}
-
-
-        </div>
-    </div>
-
-    {# Fenêtre modale d'ajout d'assurance #}
-    <div
-        id="modal-insurance"
-        data-modal-target="dialog"
-        data-action="click->modal#closeOnBackdrop"
-        class="fixed inset-0 z-50 hidden items-center justify-center bg-primary/40 p-4 backdrop-blur-md transition"
-    >
-        <div class="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-background p-6 shadow-2xl sm:p-8 animate-rise">
-            <div class="mb-6 flex items-center justify-between">
-                <div>
-                    <h2 class="font-display text-2xl font-bold sm:text-3xl">Associer une assurance</h2>
-                    <p class="text-sm text-muted-foreground">Téléverse ton attestation pour pré-remplir le contrat.</p>
-                </div>
-                <button
-                    type="button"
-                    data-action="modal#close"
-                    class="grid size-10 cursor-pointer place-items-center rounded-full bg-secondary text-foreground transition hover:bg-border"
-                    aria-label="Fermer"
-                >
-                    {{ ux_icon('lucide:x', {class: 'size-5'}) }}
-                </button>
-            </div>
-
-            {{ form_start(insurance_form, {
-                attr: {
-                    'data-controller': 'invoice-scan',
-                    'data-invoice-scan-url-value': path('app_insurance_analyze', {
-                        plate: vehicle.plate,
-                        vehicle: vehicle.brand ~ ' ' ~ vehicle.model ~ ' (' ~ vehicle.type ~ ')'
-                        })
-                }
-            }) }}
-            {{ form_row(insurance_form.insuranceFile, {
-                    attr: {
-                        'data-invoice-scan-target': 'fileInput',
-                        'data-action': 'change->invoice-scan#scan'
-                    }
-                }) }}
-
-            <p data-invoice-scan-target="status" class="mb-4 hidden rounded-xl bg-brand/10 px-3.5 py-2.5 text-xs font-semibold text-brand"></p>
-
-            <div class="grid gap-4 sm:grid-cols-2">
-                {{ form_row(insurance_form.insurer, {attr: {'data-scan-field': 'insurer'}}) }}
-                {{ form_row(insurance_form.contractNumber, {attr: {'data-scan-field': 'contractNumber'}}) }}
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-2">
-                {{ form_row(insurance_form.startDate, {attr: {'data-scan-field': 'startDate'}}) }}
-                {{ form_row(insurance_form.endDate, {attr: {'data-scan-field': 'endDate'}}) }}
-            </div>
-
-            {{ form_row(insurance_form.premium, {attr: {'data-scan-field': 'premium'}}) }}
-
-            <div class="mt-6 flex items-center justify-end gap-3 pt-2">
-                <button
-                    type="button"
-                    data-action="modal#close"
-                    class="h-12 cursor-pointer rounded-xl px-5 font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-                >
-                    Annuler
-                </button>
-                <button
-                    type="submit"
-                    class="flex h-12 cursor-pointer items-center gap-2 rounded-xl bg-primary px-6 font-semibold text-primary-foreground transition hover:-translate-y-0.5"
-                >
-                    {{ ux_icon('lucide:plus', {class: 'size-4'}) }}
-                    Enregistrer
-                </button>
-            </div>
-            {{ form_end(insurance_form) }}
-        </div>
-    </div>
-
-
-    {# Fenêtre modale d'aperçu de document (PDF ou Image) #}
-    <div
-        id="modal-viewer"
-        data-modal-target="dialog"
-        data-action="click->modal#closeOnBackdrop"
-        class="fixed inset-0 z-50 hidden items-center justify-center bg-primary/40 p-4 backdrop-blur-md transition"
-    >
-        <div class="relative flex h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-background shadow-2xl animate-rise">
-            <div class="flex items-center justify-between border-b border-border px-6 py-4">
-                <h3 data-modal-target="docTitle" class="truncate pr-4 font-display text-lg font-bold sm:text-xl">
-                    Aperçu du document
-                </h3>
-
-                <div class="flex items-center gap-2">
-                    <a
-                        data-modal-target="docDownload"
-                        href="#"
-                        download
-                        class="grid size-10 place-items-center rounded-full bg-secondary text-foreground transition hover:bg-border"
-                        title="Télécharger le fichier"
-                    >
-                        {{ ux_icon('lucide:download', {class: 'size-4'}) }}
-                    </a>
+        {# Fenêtre modale d'ajout de facture #}
+        <div
+            id="modal-invoice"
+            data-modal-target="dialog"
+            data-action="click->modal#closeOnBackdrop"
+            class="fixed inset-0 z-50 hidden items-center justify-center bg-primary/40 p-4 backdrop-blur-md transition"
+        >
+            <div class="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-background p-6 shadow-2xl sm:p-8 animate-rise">
+                <div class="mb-6 flex items-center justify-between">
+                    <div>
+                        <h2 class="font-display text-2xl font-bold sm:text-3xl">Nouvelle facture</h2>
+                        <p class="text-sm text-muted-foreground">Enregistre un entretien ou une dépense pour ce véhicule.</p>
+                    </div>
                     <button
                         type="button"
                         data-action="modal#close"
@@ -436,23 +282,177 @@
                         {{ ux_icon('lucide:x', {class: 'size-5'}) }}
                     </button>
                 </div>
-            </div>
 
-            <div class="flex flex-1 items-center justify-center overflow-auto bg-muted/50 p-4">
-                <img
-                    data-modal-target="docImage"
-                    src=""
-                    alt="Facture"
-                    class="hidden max-h-full max-w-full rounded-xl object-contain shadow-sm"
-                >
-                <iframe
-                    data-modal-target="docPdf"
-                    src=""
-                    class="hidden h-full w-full rounded-xl border-0 bg-white"
-                    title="Aperçu PDF"
-                ></iframe>
+                {{ form_start(invoice_form, {
+    attr: {
+        'data-controller': 'invoice-scan',
+        'data-invoice-scan-url-value': path('app_invoice_analyze')
+    }
+}) }}
+                {# Le champ fichier garde data-invoice-scan-target="fileInput" #}
+                {{ form_row(invoice_form.invoiceFile, {
+        attr: {
+            'data-invoice-scan-target': 'fileInput',
+            'data-action': 'change->invoice-scan#scan'
+        }
+    }) }}
+
+                <p data-invoice-scan-target="status" class="mb-4 hidden rounded-xl bg-brand/10 px-3.5 py-2.5 text-xs font-semibold text-brand"></p>
+
+                {# Les 4 champs ci-dessous utilisent maintenant data-scan-field="..." #}
+                {{ form_row(invoice_form.invoiceDate, {attr: {'data-scan-field': 'date'}}) }}
+                {{ form_row(invoice_form.garage, {attr: {'data-scan-field': 'garage'}}) }}
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    {{ form_row(invoice_form.mileage, {attr: {'data-scan-field': 'mileage'}}) }}
+                    {{ form_row(invoice_form.totalTTC, {attr: {'data-scan-field': 'totalTTC'}}) }}
+                </div>
+
+                <div class="mt-6 flex items-center justify-end gap-3 pt-2">
+                    <button
+                        type="button"
+                        data-action="modal#close"
+                        class="h-12 cursor-pointer rounded-xl px-5 font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                    >
+                        Annuler
+                    </button>
+                    <button
+                        type="submit"
+                        class="flex h-12 cursor-pointer items-center gap-2 rounded-xl bg-primary px-6 font-semibold text-primary-foreground transition hover:-translate-y-0.5"
+                    >
+                        {{ ux_icon('lucide:plus', {class: 'size-4'}) }}
+                        Enregistrer
+                    </button>
+                </div>
+                {{ form_end(invoice_form) }}
+
+
             </div>
         </div>
-    </div>
+
+        {# Fenêtre modale d'ajout d'assurance #}
+        <div
+            id="modal-insurance"
+            data-modal-target="dialog"
+            data-action="click->modal#closeOnBackdrop"
+            class="fixed inset-0 z-50 hidden items-center justify-center bg-primary/40 p-4 backdrop-blur-md transition"
+        >
+            <div class="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-background p-6 shadow-2xl sm:p-8 animate-rise">
+                <div class="mb-6 flex items-center justify-between">
+                    <div>
+                        <h2 class="font-display text-2xl font-bold sm:text-3xl">Associer une assurance</h2>
+                        <p class="text-sm text-muted-foreground">Téléverse ton attestation pour pré-remplir le contrat.</p>
+                    </div>
+                    <button
+                        type="button"
+                        data-action="modal#close"
+                        class="grid size-10 cursor-pointer place-items-center rounded-full bg-secondary text-foreground transition hover:bg-border"
+                        aria-label="Fermer"
+                    >
+                        {{ ux_icon('lucide:x', {class: 'size-5'}) }}
+                    </button>
+                </div>
+
+                {{ form_start(insurance_form, {
+                attr: {
+                    'data-controller': 'invoice-scan',
+                    'data-invoice-scan-url-value': path('app_insurance_analyze', {
+                        plate: vehicle.plate,
+                        vehicle: vehicle.brand ~ ' ' ~ vehicle.model ~ ' (' ~ vehicle.type ~ ')'
+                        })
+                }
+            }) }}
+                {{ form_row(insurance_form.insuranceFile, {
+                    attr: {
+                        'data-invoice-scan-target': 'fileInput',
+                        'data-action': 'change->invoice-scan#scan'
+                    }
+                }) }}
+
+                <p data-invoice-scan-target="status" class="mb-4 hidden rounded-xl bg-brand/10 px-3.5 py-2.5 text-xs font-semibold text-brand"></p>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    {{ form_row(insurance_form.insurer, {attr: {'data-scan-field': 'insurer'}}) }}
+                    {{ form_row(insurance_form.contractNumber, {attr: {'data-scan-field': 'contractNumber'}}) }}
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    {{ form_row(insurance_form.startDate, {attr: {'data-scan-field': 'startDate'}}) }}
+                    {{ form_row(insurance_form.endDate, {attr: {'data-scan-field': 'endDate'}}) }}
+                </div>
+
+                {{ form_row(insurance_form.premium, {attr: {'data-scan-field': 'premium'}}) }}
+
+                <div class="mt-6 flex items-center justify-end gap-3 pt-2">
+                    <button
+                        type="button"
+                        data-action="modal#close"
+                        class="h-12 cursor-pointer rounded-xl px-5 font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                    >
+                        Annuler
+                    </button>
+                    <button
+                        type="submit"
+                        class="flex h-12 cursor-pointer items-center gap-2 rounded-xl bg-primary px-6 font-semibold text-primary-foreground transition hover:-translate-y-0.5"
+                    >
+                        {{ ux_icon('lucide:plus', {class: 'size-4'}) }}
+                        Enregistrer
+                    </button>
+                </div>
+                {{ form_end(insurance_form) }}
+            </div>
+        </div>
+
+
+        {# Fenêtre modale d'aperçu de document (PDF ou Image) #}
+        <div
+            id="modal-viewer"
+            data-modal-target="dialog"
+            data-action="click->modal#closeOnBackdrop"
+            class="fixed inset-0 z-50 hidden items-center justify-center bg-primary/40 p-4 backdrop-blur-md transition"
+        >
+            <div class="relative flex h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-background shadow-2xl animate-rise">
+                <div class="flex items-center justify-between border-b border-border px-6 py-4">
+                    <h3 data-modal-target="docTitle" class="truncate pr-4 font-display text-lg font-bold sm:text-xl">
+                        Aperçu du document
+                    </h3>
+
+                    <div class="flex items-center gap-2">
+                        <a
+                            data-modal-target="docDownload"
+                            href="#"
+                            download
+                            class="grid size-10 place-items-center rounded-full bg-secondary text-foreground transition hover:bg-border"
+                            title="Télécharger le fichier"
+                        >
+                            {{ ux_icon('lucide:download', {class: 'size-4'}) }}
+                        </a>
+                        <button
+                            type="button"
+                            data-action="modal#close"
+                            class="grid size-10 cursor-pointer place-items-center rounded-full bg-secondary text-foreground transition hover:bg-border"
+                            aria-label="Fermer"
+                        >
+                            {{ ux_icon('lucide:x', {class: 'size-5'}) }}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-1 items-center justify-center overflow-auto bg-muted/50 p-4">
+                    <img
+                        data-modal-target="docImage"
+                        src=""
+                        alt="Facture"
+                        class="hidden max-h-full max-w-full rounded-xl object-contain shadow-sm"
+                    >
+                    <iframe
+                        data-modal-target="docPdf"
+                        src=""
+                        class="hidden h-full w-full rounded-xl border-0 bg-white"
+                        title="Aperçu PDF"
+                    ></iframe>
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock %}
