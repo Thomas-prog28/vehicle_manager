@@ -295,4 +295,23 @@ class Vehicle
 
         return $this;
     }
+
+    /**
+     * Retourne les contrats d'assurance triés par date d'échéance décroissante (la plus lointaine/récente en premier).
+     *
+     * @return Covered[]
+     */
+    public function getSortedCoverages(): array
+    {
+        $coverages = $this->coverages->toArray();
+
+        usort($coverages, static function (Covered $a, Covered $b): int {
+            $dateA = $a->getInsurance()?->getEndDate();
+            $dateB = $b->getInsurance()?->getEndDate();
+
+            return $dateB <=> $dateA; // Ordre décroissant (du plus récent/lointain au plus ancien)
+        });
+
+        return $coverages;
+    }
 }
