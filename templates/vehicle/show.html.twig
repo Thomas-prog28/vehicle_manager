@@ -285,7 +285,8 @@
 
                 {{ form_start(invoice_form, {
     attr: {
-        'data-controller': 'invoice-scan',
+        'data-turbo': 'false',
+        'data-controller': 'invoice-scan offline-sync',
         'data-invoice-scan-url-value': path('app_invoice_analyze'),
         'data-action': 'submit->offline-sync#queueFormSubmit'
     }
@@ -356,7 +357,8 @@
 
                 {{ form_start(insurance_form, {
                 attr: {
-                    'data-controller': 'invoice-scan',
+                    'data-turbo': 'false',
+                    'data-controller': 'invoice-scan offline-sync',
                     'data-invoice-scan-url-value': path('app_insurance_analyze', {
                         plate: vehicle.plate,
                         vehicle: vehicle.brand ~ ' ' ~ vehicle.model ~ ' (' ~ vehicle.type ~ ')'

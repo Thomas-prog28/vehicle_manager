@@ -1,4 +1,4 @@
-const CACHE_NAME = 'garage-offline-v2';
+const CACHE_NAME = 'garage-offline-v3';
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();
