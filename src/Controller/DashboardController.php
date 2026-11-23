@@ -54,15 +54,19 @@ final class DashboardController extends AbstractController
                 }
             }
 
-            // 2. Cotisation totale d'assurance en cours + échéances dans les 30 jours
+            // 2. Cotisation totale d'assurance en cours (non expirée) + échéances dans les 30 jours
             foreach ($v->getCoverages() as $coverage) {
                 $ins = $coverage->getInsurance();
                 if ($ins && !in_array($ins->getId(), $countedInsurances, true)) {
                     $countedInsurances[] = $ins->getId();
-                    $totalInsurance += (float) ($ins->getTotalAmount() ?? $coverage->getPremium());
 
-                    if ($ins->getEndDate() !== null && $ins->getEndDate() <= $in30Days) {
-                        $alertsCount++;
+                    // On ne cumule que les avis d'échéance dont la date de fin n'est pas dépassée
+                    if ($ins->getEndDate() === null || $ins->getEndDate() >= $today) {
+                        $totalInsurance += (float) ($ins->getTotalAmount() ?? $coverage->getPremium());
+
+                        if ($ins->getEndDate() !== null && $ins->getEndDate() <= $in30Days) {
+                            $alertsCount++;
+                        }
                     }
                 }
             }
