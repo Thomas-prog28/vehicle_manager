@@ -39,7 +39,7 @@
                     </div>
                 </div>
 
-                {{ form_start(form, {attr: {class: 'space-y-6'}}) }}
+                {{ form_start(form, {attr: {class: 'space-y-6', 'data-controller': 'brand-autocomplete'}}) }}
                     {# Type et Carburant #}
                     <div class="grid gap-4 sm:grid-cols-2">
                         {{ form_row(form.type) }}
@@ -81,6 +81,8 @@
                             </div>
                         </div>
                     {% endif %}
+
+                    <datalist id="vehicle-brands-list" data-brand-autocomplete-target="datalist"></datalist>
 
                     {# Boutons d'action #}
                     <div class="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:justify-end">

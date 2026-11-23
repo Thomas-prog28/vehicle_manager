@@ -18,9 +18,24 @@ class VehicleType extends AbstractType
         $builder
             ->add('type', ChoiceType::class, [
                 'label' => 'Type de véhicule',
-                'choices' => ['Voiture' => 'car', 'Moto' => 'moto'],
+                'choices' => [
+                    'Voiture' => 'voiture',
+                    'Moto' => 'moto',
+                ],
+                'attr' => [
+                    'data-brand-autocomplete-target' => 'typeSelect',
+                    'data-action' => 'change->brand-autocomplete#updateBrands',
+                ],
             ])
-            ->add('brand', TextType::class, ['label' => 'Marque', 'attr' => ['placeholder' => 'Ex. Peugeot, Honda, Renault...'],])
+            ->add('brand', TextType::class, [
+                'label' => 'Marque',
+                'attr' => [
+                    'placeholder' => 'Ex. Opel, Peugeot, Honda...',
+                    'list' => 'vehicle-brands-list',
+                    'autocomplete' => 'off',
+                ],
+            ])
+
             ->add('model', TextType::class, ['label' => 'Modèle', 'attr' => ['placeholder' => 'Ex. Zafira Tourer C 1.6 CDTI 136ch, CBF 600...'],])
             ->add('plate', TextType::class, ['label' => 'Immatriculation', 'attr' => ['placeholder' => 'AB-123-CD', 'class' => 'font-mono uppercase',],])
             ->add('firstRegistrationDate', DateType::class, [

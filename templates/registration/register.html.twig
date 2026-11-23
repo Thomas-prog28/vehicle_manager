@@ -58,13 +58,21 @@
                 }) }}
 
                     {% if registrationForm.agreeTerms is defined %}
-                        <div class="mb-5 flex items-center gap-2.5">
-                            {{ form_widget(registrationForm.agreeTerms) }}
-                            <label for="{{ registrationForm.agreeTerms.vars.id }}" class="cursor-pointer text-xs text-muted-foreground">
-                                J'accepte les conditions d'utilisation
+                        <div class="flex items-start gap-3">
+                            {{ form_widget(registrationForm.agreeTerms, {attr: {class: 'mt-1 size-4 rounded border-border text-brand focus:ring-brand'}}) }}
+                            <label for="{{ registrationForm.agreeTerms.vars.id }}" class="text-sm text-muted-foreground">
+                                J'accepte les
+                                <a href="{{ path('app_terms') }}" target="_blank" rel="noopener" class="font-semibold text-foreground underline hover:text-brand">
+                                    conditions d'utilisation
+                                </a>
+                                et la
+                                <a href="{{ path('app_privacy') }}" target="_blank" rel="noopener" class="font-semibold text-foreground underline hover:text-brand">
+                                    politique de confidentialité
+                                </a>.
                             </label>
                         </div>
                         {{ form_errors(registrationForm.agreeTerms) }}
+
                     {% endif %}
 
                     <button type="submit" class="group mt-2 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-primary-foreground transition hover:-translate-y-0.5">

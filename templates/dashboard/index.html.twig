@@ -167,7 +167,7 @@
                     </button>
                 </div>
 
-                {{ form_start(form, {attr: {class: 'space-y-4'}}) }}
+                {{ form_start(form, {attr: {class: 'space-y-4', 'data-controller': 'brand-autocomplete'}}) }}
                     {{ form_widget(form) }}
 
                     <div class="mt-6 flex items-center justify-end gap-3 pt-2">
@@ -186,6 +186,8 @@
                             Enregistrer
                         </button>
                     </div>
+                    <datalist id="vehicle-brands-list" data-brand-autocomplete-target="datalist"></datalist>
+
                 {{ form_end(form) }}
             </div>
         </div>
