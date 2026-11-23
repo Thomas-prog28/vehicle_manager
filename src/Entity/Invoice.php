@@ -36,6 +36,30 @@ class Invoice
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?Vehicle $vehicle = null;
 
+    public const TYPES = [
+        'Révision / Entretien' => 'revision',
+        'Pneumatiques' => 'pneus',
+        'Freinage' => 'freins',
+        'Réparation / Panne' => 'reparation',
+        'Contrôle technique' => 'controle_technique',
+        'Autre' => 'autre',
+    ];
+
+    #[ORM\Column(length: 30, options: ['default' => 'autre'])]
+    private string $type = 'autre';
+
+    public function getType(): string
+    {
+        return $this->type;
+    }
+
+    public function setType(string $type): static
+    {
+        $this->type = $type;
+
+        return $this;
+    }
+
     public function getId(): ?int
     {
         return $this->id;

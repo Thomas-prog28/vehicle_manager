@@ -25,14 +25,22 @@ final readonly class InvoiceAnalyzerService
         $base64Data = base64_encode(file_get_contents($file->getPathname()));
 
         $prompt = <<<PROMPT
-Analyse cette facture d'entretien automobile ou moto et extrais uniquement les 4 informations suivantes :
+Analyse cette facture d'entretien automobile ou moto et extrais uniquement les 5 informations suivantes :
 1. "date" : la date de la facture au format strict YYYY-MM-DD (ex: "2026-11-18"). Si introuvable, mets null.
 2. "garage" : le nom du garage, de l'enseigne ou du vendeur (ex: "Norauto", "Honda Moto", "Oscaro"). Si introuvable, mets null.
 3. "mileage" : le kilométrage du véhicule indiqué sur la facture sous forme de nombre entier uniquement (ex: 65400). Si introuvable, mets null.
 4. "totalTTC" : le montant total TTC payé sous forme de nombre décimal avec un point (ex: 149.90). Si introuvable, mets null.
+5. "type" : la catégorie principale de la facture parmi ces 6 valeurs exactes uniquement :
+   - "revision" (vidange, filtres, révision périodique, bougies, entretien annuel)
+   - "pneus" (pneus, montage, équilibrage, géométrie)
+   - "freins" (plaquettes, disques, liquide de frein)
+   - "controle_technique" (contrôle technique, contre-visite)
+   - "reparation" (panne, batterie, alternateur, embrayage, distribution, carrosserie)
+   - "autre" (accessoires, équipement, produit d'entretien ou indéterminé)
 
 Réponds uniquement avec le JSON demandé, sans texte autour.
 PROMPT;
+
 
         $host = 'generativelanguage' . '.' . 'googleapis' . '.' . 'com';
         $path = '/v1beta/models/gemini-3.1-flash-lite:generateContent';
@@ -82,11 +90,15 @@ PROMPT;
         $rawJson = $payload['candidates'][0]['content']['parts'][0]['text'] ?? '{}';
         $data = json_decode($rawJson, true) ?? [];
 
+        $allowedTypes = ['revision', 'pneus', 'freins', 'reparation', 'controle_technique', 'autre'];
+        $detectedType = isset($data['type']) && in_array($data['type'], $allowedTypes, true) ? $data['type'] : 'autre';
+
         return [
             'date' => isset($data['date']) && is_string($data['date']) ? $data['date'] : null,
             'garage' => isset($data['garage']) && is_string($data['garage']) ? mb_substr($data['garage'], 0, 50) : null,
             'mileage' => isset($data['mileage']) && is_numeric($data['mileage']) ? (int) $data['mileage'] : null,
             'totalTTC' => isset($data['totalTTC']) && is_numeric($data['totalTTC']) ? (float) $data['totalTTC'] : null,
+            'type' => $detectedType,
         ];
     }
 

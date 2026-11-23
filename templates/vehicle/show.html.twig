@@ -301,8 +301,13 @@
 
                 <p data-invoice-scan-target="status" class="mb-4 hidden rounded-xl bg-brand/10 px-3.5 py-2.5 text-xs font-semibold text-brand"></p>
 
-                {# Les 4 champs ci-dessous utilisent maintenant data-scan-field="..." #}
-                {{ form_row(invoice_form.invoiceDate, {attr: {'data-scan-field': 'date'}}) }}
+                {# Les 5 champs ci-dessous utilisent maintenant data-scan-field="..." #}
+                {# Date et Catégorie côte à côte #}
+                <div class="grid gap-4 sm:grid-cols-2">
+                    {{ form_row(invoice_form.invoiceDate, {attr: {'data-scan-field': 'date'}}) }}
+                    {{ form_row(invoice_form.type, {attr: {'data-scan-field': 'type'}}) }}
+                </div>
+
                 {{ form_row(invoice_form.garage, {attr: {'data-scan-field': 'garage'}}) }}
 
                 <div class="grid gap-4 sm:grid-cols-2">

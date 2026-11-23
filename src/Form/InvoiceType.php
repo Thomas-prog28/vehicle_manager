@@ -4,6 +4,7 @@ namespace App\Form;
 
 use App\Entity\Invoice;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
@@ -59,6 +60,12 @@ class InvoiceType extends AbstractType
                         mimeTypesMessage: 'Formats acceptés : PDF, JPG, PNG ou WebP (10 Mo max).'
                     ),
                 ],
+            ])
+
+            ->add('type', ChoiceType::class, [
+                'label' => 'Catégorie',
+                'choices' => Invoice::TYPES,
+                'placeholder' => 'Choisis une catégorie...'
             ])
         ;
     }
