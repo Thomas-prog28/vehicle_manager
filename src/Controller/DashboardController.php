@@ -2,10 +2,11 @@
 
 namespace App\Controller;
 
-use App\Repository\VehicleRepository;
-use App\Repository\FuelLogRepository;
 use App\Entity\Vehicle;
 use App\Form\VehicleType;
+use App\Repository\VehicleRepository;
+use App\Repository\FuelLogRepository;
+use App\Service\InvoiceAnalyzerService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -19,7 +20,8 @@ final class DashboardController extends AbstractController
         Request $request,
         EntityManagerInterface $em,
         VehicleRepository $vehicleRepository,
-        FuelLogRepository $fuelLogRepository
+        FuelLogRepository $fuelLogRepository,
+        InvoiceAnalyzerService $analyzer
     ): Response {
         $vehicle = new Vehicle();
         $form = $this->createForm(VehicleType::class, $vehicle);
@@ -27,6 +29,20 @@ final class DashboardController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $vehicle->setUser($this->getUser());
+
+            if ($vehicle->getServiceIntervalKm() === null || $vehicle->getServiceIntervalMonths() === null) {
+                $year = $vehicle->getFirstRegistrationDate() ? (int) $vehicle->getFirstRegistrationDate()->format('Y') : null;
+                $predicted = $analyzer->predictServiceInterval(
+                    (string) $vehicle->getType(),
+                    (string) $vehicle->getBrand(),
+                    (string) $vehicle->getModel(),
+                    $vehicle->getFuelType(),
+                    $year
+                );
+                $vehicle->setServiceIntervalKm($vehicle->getServiceIntervalKm() ?? $predicted['km']);
+                $vehicle->setServiceIntervalMonths($vehicle->getServiceIntervalMonths() ?? $predicted['months']);
+            }
+
             $em->persist($vehicle);
             $em->flush();
 
@@ -60,7 +76,6 @@ final class DashboardController extends AbstractController
                 if ($ins && !in_array($ins->getId(), $countedInsurances, true)) {
                     $countedInsurances[] = $ins->getId();
 
-                    // On ne cumule que les avis d'échéance dont la date de fin n'est pas dépassée
                     if ($ins->getEndDate() === null || $ins->getEndDate() >= $today) {
                         $totalInsurance += (float) ($ins->getTotalAmount() ?? $coverage->getPremium());
 
@@ -69,6 +84,11 @@ final class DashboardController extends AbstractController
                         }
                     }
                 }
+            }
+
+            // 3. Alerte si la révision du véhicule est imminente ou dépassée
+            if ($v->getNextServiceInfo()['isUrgent']) {
+                $alertsCount++;
             }
         }
 

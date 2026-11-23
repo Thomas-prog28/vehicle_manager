@@ -295,4 +295,70 @@ PROMPT;
             'stationName' => isset($data['stationName']) && is_string($data['stationName']) ? mb_substr($data['stationName'], 0, 100) : null,
         ];
     }
+
+    /**
+     * Déduit les intervalles de révision constructeur (km et mois) via Gemini.
+     *
+     * @return array{km: int, months: int}
+     */
+    public function predictServiceInterval(string $type, string $brand, string $model, ?string $fuelType, ?int $year): array
+    {
+        $isMoto = strtolower($type) === 'moto';
+        $fallbackKm = $isMoto ? 6000 : (strtolower((string) $fuelType) === 'diesel' ? 20000 : 15000);
+        $fallbackMonths = 12;
+
+        $yearText = $year ? "année {$year}" : "année non précisée";
+        $fuelText = $fuelType ?: "carburant non précisé";
+
+        $prompt = <<<PROMPT
+Tu es un expert technique automobile et moto.
+Détermine la préconisation constructeur standard pour la révision périodique (vidange + filtres) du véhicule suivant :
+- Type : {$type}
+- Marque : {$brand}
+- Modèle / Motorisation : {$model}
+- Carburant : {$fuelText}
+- Année : {$yearText}
+
+Règles strictes :
+- Si la motorisation exacte n'est pas indiquée dans le modèle, donne l'intervalle constructeur majoritaire standard pour ce modèle, cette année et ce carburant.
+- Renvoie uniquement un JSON avec deux entiers positifs :
+  1. "km" : intervalle kilométrique (ex: 15000, 20000, 30000 pour une voiture ; 6000, 10000, 12000 pour une moto).
+  2. "months" : intervalle temporel en mois (ex: 12 ou 24).
+PROMPT;
+
+        try {
+            $host = 'generativelanguage' . '.' . 'googleapis' . '.' . 'com';
+            $path = '/v1beta/models/gemini-3.1-flash-lite:generateContent';
+
+            $response = $this->httpClient->request('POST', 'https://' . $host . $path, [
+                'timeout' => 15,
+                'extra' => ['curl' => [\CURLOPT_IPRESOLVE => \CURL_IPRESOLVE_V4]],
+                'query' => ['key' => $this->geminiApiKey],
+                'json' => [
+                    'contents' => [['parts' => [['text' => $prompt]]]],
+                    'generationConfig' => [
+                        'response_mime_type' => 'application/json',
+                        'response_schema' => [
+                            'type' => 'OBJECT',
+                            'properties' => [
+                                'km' => ['type' => 'INTEGER'],
+                                'months' => ['type' => 'INTEGER'],
+                            ],
+                        ],
+                    ],
+                ],
+            ]);
+
+            $payload = $response->toArray(false);
+            $rawJson = $payload['candidates'][0]['content']['parts'][0]['text'] ?? '{}';
+            $data = json_decode($rawJson, true) ?? [];
+
+            $km = isset($data['km']) && (int) $data['km'] >= 1000 ? (int) $data['km'] : $fallbackKm;
+            $months = isset($data['months']) && (int) $data['months'] >= 6 ? (int) $data['months'] : $fallbackMonths;
+
+            return ['km' => $km, 'months' => $months];
+        } catch (\Throwable) {
+            return ['km' => $fallbackKm, 'months' => $fallbackMonths];
+        }
+    }
 }

@@ -30,7 +30,7 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 final class VehicleController extends AbstractController
 {
     #[Route('/vehicle/new', name: 'app_vehicle_new')]
-    public function new(Request $request, EntityManagerInterface $em, #[CurrentUser] User $user): Response
+    public function new(Request $request, EntityManagerInterface $em, #[CurrentUser] User $user,  InvoiceAnalyzerService $analyzer): Response
     {
         $vehicle = new Vehicle();
         $vehicle->setUser($user);
@@ -118,7 +118,7 @@ final class VehicleController extends AbstractController
 
             $covered = new Covered();
             $covered->setVehicle($vehicle);
-            $covered->setInsurance($insurance);
+            $covered->setInsurance($targetInsurance);
             $covered->setPremium($premium);
 
             $em->persist($covered);
@@ -146,6 +146,48 @@ final class VehicleController extends AbstractController
                 : ($insuranceForm->isSubmitted() && !$insuranceForm->isValid() ? 'modal-insurance' : null),
         ]);
     }
+
+    #[Route('/vehicle/{id}/edit', name: 'app_vehicle_edit', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
+    public function edit(
+        Vehicle $vehicle,
+        Request $request,
+        EntityManagerInterface $em,
+        InvoiceAnalyzerService $analyzer,
+        #[CurrentUser] User $user
+    ): Response {
+        if ($vehicle->getUser() !== $user) {
+            throw $this->createAccessDeniedException('Ce véhicule ne t’appartient pas.');
+        }
+
+        $form = $this->createForm(VehicleType::class, $vehicle);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            if ($vehicle->getServiceIntervalKm() === null || $vehicle->getServiceIntervalMonths() === null) {
+                $year = $vehicle->getFirstRegistrationDate() ? (int) $vehicle->getFirstRegistrationDate()->format('Y') : null;
+                $predicted = $analyzer->predictServiceInterval(
+                    (string) $vehicle->getType(),
+                    (string) $vehicle->getBrand(),
+                    (string) $vehicle->getModel(),
+                    $vehicle->getFuelType(),
+                    $year
+                );
+                $vehicle->setServiceIntervalKm($vehicle->getServiceIntervalKm() ?? $predicted['km']);
+                $vehicle->setServiceIntervalMonths($vehicle->getServiceIntervalMonths() ?? $predicted['months']);
+            }
+
+            $em->flush();
+            $this->addFlash('success', 'Véhicule mis à jour.');
+
+            return $this->redirectToRoute('app_vehicle_show', ['id' => $vehicle->getId()]);
+        }
+
+        return $this->render('vehicle/index.html.twig', [
+            'form' => $form,
+            'vehicle' => $vehicle,
+        ]);
+    }
+
 
     #[Route('/insurance/analyze', name: 'app_insurance_analyze', methods: ['POST'])]
     public function analyzeInsurance(Request $request, InvoiceAnalyzerService $analyzer): JsonResponse

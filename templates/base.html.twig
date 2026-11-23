@@ -32,7 +32,7 @@
         {% endif %}
 
     </head>
-    <body {{ app.user ? 'data-controller="bfcache"' : '' }} class="bg-background text-foreground antialiased" data-controller="offline-sync" class="...">
+    <body data-controller="{{ app.user ? 'bfcache ' : '' }}offline-sync" class="bg-background text-foreground antialiased">
         <div data-offline-sync-target="banner" class="hidden sticky top-0 z-50 bg-amber-500 px-4 py-2 text-center text-xs font-semibold text-white shadow">
             <span data-offline-sync-target="bannerText">Mode hors ligne</span>
         </div>

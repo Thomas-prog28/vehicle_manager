@@ -1,7 +1,8 @@
 {% props vehicle, delay = 0, tone = 'bg-brand text-brand-foreground', km = null, nextService = 'À planifier', serviceIn = null, insurance = 'Non renseignée', insIn = null %}
 
 {% set currentKm = km is not null ? km : vehicle.currentMileage %}
-{% set serviceWarn = serviceIn is not null and serviceIn < 500 %}
+{% set serviceInfo = vehicle.nextServiceInfo %}
+{% set serviceWarn = serviceInfo.isUrgent %}
 
 {% set activeCoverage = vehicle.sortedCoverages|first %}
 {% set insName = activeCoverage ? activeCoverage.insurance.insurer : insurance %}
@@ -51,13 +52,27 @@
                     {{ ux_icon('lucide:wrench', {class: 'size-3.5'}) }}
                     Prochaine révision
                 </div>
-                <p class="text-sm font-semibold leading-tight">{{ nextService }}</p>
-                {% if serviceIn is not null %}
-                    <p class="text-xs font-bold {{ serviceWarn ? 'text-alert' : 'text-muted-foreground' }}">
-                        dans {{ serviceIn|number_format(0, ',', ' ') }} km
+                {% if serviceInfo.nextKm is not null %}
+                    <p class="text-sm font-semibold leading-tight">
+                        À {{ serviceInfo.nextKm|number_format(0, ',', ' ') }} km
                     </p>
+                    <p class="text-xs font-bold {{ serviceWarn ? 'text-alert' : 'text-muted-foreground' }}">
+                        {% if serviceInfo.remainingKm <= 0 %}
+                            Dépassée de {{ (serviceInfo.remainingKm * - 1)|number_format(0, ',', ' ') }} km
+                        {% else %}
+                            dans {{ serviceInfo.remainingKm|number_format(0, ',', ' ') }} km
+                        {% endif %}
+                    </p>
+                {% elseif serviceInfo.nextDate is not null %}
+                    <p class="text-sm font-semibold leading-tight">
+                        Avant le {{ serviceInfo.nextDate|date('d/m/Y') }}
+                    </p>
+                {% else %}
+                    <p class="text-sm font-semibold leading-tight">À planifier</p>
+                    <p class="text-[11px] text-muted-foreground">Aucune révision enregistrée</p>
                 {% endif %}
             </div>
+
 
             <div class="rounded-2xl p-3 {{ insWarn ? 'bg-alert/10' : 'bg-muted' }}">
                 <div class="mb-1 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">

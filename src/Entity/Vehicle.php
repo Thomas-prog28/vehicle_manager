@@ -40,6 +40,13 @@ class Vehicle
     #[ORM\Column(options: ['default' => false])]
     private bool $archived = false;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $serviceIntervalKm = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $serviceIntervalMonths = null;
+
+
     #[ORM\ManyToOne(inversedBy: 'vehicles')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?User $user = null;
@@ -313,5 +320,92 @@ class Vehicle
         });
 
         return $coverages;
+    }
+
+    public function getServiceIntervalKm(): ?int
+    {
+        return $this->serviceIntervalKm;
+    }
+
+    public function setServiceIntervalKm(?int $serviceIntervalKm): static
+    {
+        $this->serviceIntervalKm = $serviceIntervalKm;
+
+        return $this;
+    }
+
+    public function getServiceIntervalMonths(): ?int
+    {
+        return $this->serviceIntervalMonths;
+    }
+
+    public function setServiceIntervalMonths(?int $serviceIntervalMonths): static
+    {
+        $this->serviceIntervalMonths = $serviceIntervalMonths;
+
+        return $this;
+    }
+
+    /**
+     * Calcule la prochaine révision à partir de la dernière facture de catégorie 'revision'.
+     *
+     * @return array{nextKm: ?int, remainingKm: ?int, nextDate: ?\DateTimeInterface, isUrgent: bool, isOverdue: bool}
+     */
+    public function getNextServiceInfo(): array
+    {
+        $intervalKm = $this->serviceIntervalKm ?? (strtolower((string) $this->type) === 'moto' ? 6000 : 15000);
+        $intervalMonths = $this->serviceIntervalMonths ?? 12;
+
+        // Recherche la facture de type 'revision' la plus récente
+        $lastRevision = null;
+        foreach ($this->invoices as $invoice) {
+            if ($invoice->getType() === 'revision') {
+                if ($lastRevision === null || $invoice->getInvoiceDate() > $lastRevision->getInvoiceDate()) {
+                    $lastRevision = $invoice;
+                }
+            }
+        }
+
+        if (!$lastRevision) {
+            return [
+                'nextKm' => null,
+                'remainingKm' => null,
+                'nextDate' => null,
+                'isUrgent' => false,
+                'isOverdue' => false,
+            ];
+        }
+
+        $nextKm = $lastRevision->getMileage() !== null
+            ? $lastRevision->getMileage() + $intervalKm
+            : null;
+
+        $remainingKm = $nextKm !== null
+            ? $nextKm - $this->getCurrentMileage()
+            : null;
+
+        $nextDate = null;
+        if ($lastRevision->getInvoiceDate() !== null) {
+            $baseDate = \DateTimeImmutable::createFromInterface($lastRevision->getInvoiceDate());
+            $nextDate = $baseDate->modify("+{$intervalMonths} months");
+        }
+
+        $today = new \DateTimeImmutable('today');
+        $in30Days = $today->modify('+30 days');
+
+        $isOverdue = ($remainingKm !== null && $remainingKm <= 0)
+            || ($nextDate !== null && $nextDate < $today);
+
+        $isUrgent = $isOverdue
+            || ($remainingKm !== null && $remainingKm <= 500)
+            || ($nextDate !== null && $nextDate <= $in30Days);
+
+        return [
+            'nextKm' => $nextKm,
+            'remainingKm' => $remainingKm,
+            'nextDate' => $nextDate,
+            'isUrgent' => $isUrgent,
+            'isOverdue' => $isOverdue,
+        ];
     }
 }

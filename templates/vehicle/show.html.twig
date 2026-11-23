@@ -14,10 +14,11 @@
             </a>
 
             <div class="flex items-center gap-2">
-                <button type="button" class="grid size-11 cursor-pointer place-items-center rounded-full bg-card shadow-sm transition hover:bg-secondary" aria-label="Modifier le véhicule">
+                <a href="{{ path('app_vehicle_edit', {id: vehicle.id}) }}" class="grid size-11 place-items-center rounded-full bg-card shadow-sm transition hover:bg-secondary" aria-label="Modifier le véhicule" title="Modifier le véhicule">
                     {{ ux_icon('lucide:pencil', {class: 'size-4'}) }}
-                </button>
+                </a>
             </div>
+
         </header>
 
         <main class="mx-auto max-w-7xl space-y-8 px-4 pb-16 sm:px-6">
@@ -79,10 +80,10 @@
                 {# Colonne gauche : Factures + Pleins de carburant (2/3) #}
                 <div class="space-y-8 lg:col-span-2">
                     {# 1. Historique & Factures #}
-                    <section class="space-y-4">
+                    <section class="space-y-4" data-controller="invoice-filter">
                         <div class="flex items-center justify-between">
                             <h2 class="font-display text-2xl font-bold">Historique & Factures</h2>
-                            <span class="rounded-full bg-secondary px-3 py-1 font-mono text-xs font-bold text-muted-foreground">
+                            <span data-invoice-filter-target="count" class="rounded-full bg-secondary px-3 py-1 font-mono text-xs font-bold text-muted-foreground">
                                 {{ vehicle.invoices|length }}
                             </span>
                         </div>
@@ -98,17 +99,60 @@
                                 </p>
                             </div>
                         {% else %}
+                            {# Barre de filtres par catégorie #}
+                            {% set typeLabels = {
+                                'revision': 'Révision',
+                                'pneus': 'Pneumatiques',
+                                'freins': 'Freinage',
+                                'controle_technique': 'Contrôle technique',
+                                'reparation': 'Réparation',
+                                'autre': 'Autre'
+                            } %}
+
+                            <div class="flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    data-invoice-filter-target="button"
+                                    data-action="invoice-filter#filter"
+                                    data-type="all"
+                                    class="cursor-pointer rounded-full bg-foreground px-3.5 py-1.5 text-xs font-semibold text-background transition"
+                                >
+                                    Toutes
+                                </button>
+                                {% for code, label in typeLabels %}
+                                    <button
+                                        type="button"
+                                        data-invoice-filter-target="button"
+                                        data-action="invoice-filter#filter"
+                                        data-type="{{ code }}"
+                                        class="cursor-pointer rounded-full bg-secondary px-3.5 py-1.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground"
+                                    >
+                                        {{ label }}
+                                    </button>
+                                {% endfor %}
+                            </div>
+
                             <div class="space-y-3">
                                 {% for invoice in vehicle.invoices %}
-                                    <div class="flex flex-col justify-between gap-4 rounded-2xl bg-card p-5 shadow-sm sm:flex-row sm:items-center">
+                                    {% set invType = invoice.type ?: 'autre' %}
+                                    <div
+                                        data-invoice-filter-target="item"
+                                        data-invoice-type="{{ invType }}"
+                                        class="flex flex-col justify-between gap-4 rounded-2xl bg-card p-5 shadow-sm sm:flex-row sm:items-center"
+                                    >
                                         <div class="flex items-center gap-4">
                                             <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-secondary text-foreground">
                                                 {{ ux_icon('lucide:file-text', {class: 'size-5'}) }}
                                             </span>
                                             <div>
-                                                <p class="font-semibold">
-                                                    {{ invoice.garage ?: invoice.invoiceOriginalName }}
-                                                </p>
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <p class="font-semibold">
+                                                        {{ invoice.garage ?: invoice.invoiceOriginalName }}
+                                                    </p>
+                                                    <span class="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                                        {{ typeLabels[invType] ?? 'Autre' }}
+                                                    </span>
+                                                </div>
                                                 <p class="text-xs text-muted-foreground">
                                                     Le {{ invoice.invoiceDate|date('d/m/Y') }}
                                                     {% if invoice.mileage %}
@@ -140,8 +184,14 @@
                                     </div>
                                 {% endfor %}
                             </div>
+
+                            {# Message affiché si aucune facture ne correspond au filtre choisi #}
+                            <div data-invoice-filter-target="emptyFiltered" class="hidden rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center text-sm text-muted-foreground">
+                                Aucune facture enregistrée dans cette catégorie.
+                            </div>
                         {% endif %}
                     </section>
+
 
                     {# 2. Historique des pleins de carburant #}
                     <section class="space-y-4">
