@@ -3,14 +3,14 @@
 {% set currentKm = km is not null ? km : vehicle.currentMileage %}
 {% set serviceWarn = serviceIn is not null and serviceIn < 500 %}
 
-{% set activeCoverage = vehicle.coverages|last %}
+{% set activeCoverage = vehicle.sortedCoverages|first %}
 {% set insName = activeCoverage ? activeCoverage.insurance.insurer : insurance %}
 {% set insPremium = activeCoverage ? activeCoverage.premium : null %}
 {% set daysLeft = activeCoverage ? date(activeCoverage.insurance.endDate).diff(date('today')).days : insIn %}
 {% set isExpired = activeCoverage and activeCoverage.insurance.endDate < date('today') %}
 {% set insWarn = activeCoverage ? (isExpired or daysLeft < 30) : (insIn is not null and insIn < 30) %}
 
-{% set cardTone = (serviceWarn or insWarn) ? 'bg-alert text-alert-foreground' : (vehicle.type == 'moto' ? 'bg-info text-info-foreground' : tone) %}
+{% set cardTone = (serviceWarn or insWarn) ? 'bg-alert text-alert-foreground' : (vehicle.type|lower == 'moto' ? 'bg-info text-info-foreground' : tone) %}
 
 <a href="{{ path('app_vehicle_show', {id: vehicle.id}) }}" style="animation-delay: {{ delay }}ms" class="group block overflow-hidden rounded-3xl bg-card shadow-sm transition hover:-translate-y-1 hover:shadow-xl animate-rise">
     {# Bannière colorée avec plaque et silhouette #}
@@ -40,11 +40,7 @@
         </div>
 
         <div class="flex items-baseline gap-2">
-            <span class="font-display text-4xl font-semibold"><div class="flex items-baseline gap-2">
-                    <span class="font-display text-4xl font-semibold">{{ currentKm|number_format(0, ',', ' ') }}</span>
-                    <span class="text-muted-foreground">km</span>
-                </div>
-            </span>
+            <span class="font-display text-4xl font-semibold">{{ currentKm|number_format(0, ',', ' ') }}</span>
             <span class="text-muted-foreground">km</span>
         </div>
 
@@ -80,7 +76,6 @@
                     </p>
                 {% endif %}
             </div>
-
         </div>
     </div>
 </a>
