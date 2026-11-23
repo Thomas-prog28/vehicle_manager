@@ -19,21 +19,43 @@ class InvoiceType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $isEdit = $options['is_edit'];
+
+        $fileConstraints = [
+            new File(
+                maxSize: '10M',
+                mimeTypes: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
+                mimeTypesMessage: 'Formats acceptés : PDF, JPG, PNG ou WebP.'
+            ),
+        ];
+
+        if (!$isEdit) {
+            array_unshift($fileConstraints, new NotBlank(message: 'Veuillez joindre la facture (PDF ou photo).'));
+        }
+
         $builder
+            ->add('invoiceFile', FileType::class, [
+                'label' => $isEdit ? 'Remplacer le justificatif (optionnel)' : 'Facture (PDF ou photo)',
+                'mapped' => false,
+                'required' => !$isEdit,
+                'constraints' => $fileConstraints,
+            ])
             ->add('invoiceDate', DateType::class, [
                 'label' => 'Date de la facture',
                 'widget' => 'single_text',
-                'constraints' => [
-                    new NotBlank(message: 'La date est obligatoire.'),
-                ],
+                'constraints' => [new NotBlank()],
+            ])
+            ->add('type', ChoiceType::class, [
+                'label' => 'Catégorie',
+                'choices' => Invoice::TYPES,
             ])
             ->add('garage', TextType::class, [
-                'label' => 'Garage / Prestataire',
+                'label' => 'Garage / Enseigne',
                 'required' => false,
-                'attr' => ['placeholder' => 'Ex. Norauto, Concessionnaire, Pièces auto...'],
+                'attr' => ['placeholder' => 'Ex. Norauto, Honda Moto, Oscaro...'],
             ])
             ->add('mileage', IntegerType::class, [
-                'label' => 'Kilométrage au compteur',
+                'label' => 'Kilométrage',
                 'required' => false,
                 'attr' => ['placeholder' => 'Ex. 65400'],
             ])
@@ -43,30 +65,6 @@ class InvoiceType extends AbstractType
                 'required' => false,
                 'attr' => ['placeholder' => 'Ex. 149.90'],
             ])
-            ->add('invoiceFile', FileType::class, [
-                'label' => 'Document (PDF ou photo)',
-                'mapped' => false,
-                'required' => true,
-                'constraints' => [
-                    new NotBlank(message: 'Veuillez joindre un fichier (PDF ou image).'),
-                    new File(
-                        maxSize: '10M',
-                        mimeTypes: [
-                            'application/pdf',
-                            'image/jpeg',
-                            'image/png',
-                            'image/webp',
-                        ],
-                        mimeTypesMessage: 'Formats acceptés : PDF, JPG, PNG ou WebP (10 Mo max).'
-                    ),
-                ],
-            ])
-
-            ->add('type', ChoiceType::class, [
-                'label' => 'Catégorie',
-                'choices' => Invoice::TYPES,
-                'placeholder' => 'Choisis une catégorie...'
-            ])
         ;
     }
 
@@ -74,6 +72,7 @@ class InvoiceType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Invoice::class,
+            'is_edit' => false,
         ]);
     }
 }

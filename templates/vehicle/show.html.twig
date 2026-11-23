@@ -162,12 +162,21 @@
                                             </div>
                                         </div>
 
-                                        <div class="flex items-center justify-between gap-4 sm:justify-end">
+                                                                               <div class="flex items-center justify-between gap-2 sm:justify-end">
                                             {% if invoice.totalTTC is not null %}
-                                                <span class="font-display text-lg font-bold">
+                                                <span class="mr-2 font-display text-lg font-bold">
                                                     {{ invoice.totalTTC|number_format(2, ',', ' ') }} €
                                                 </span>
                                             {% endif %}
+
+                                            <a
+                                                href="{{ path('app_invoice_edit', {id: invoice.id}) }}"
+                                                class="grid size-10 place-items-center rounded-xl bg-secondary text-foreground transition hover:bg-border"
+                                                title="Modifier la facture"
+                                                aria-label="Modifier la facture"
+                                            >
+                                                {{ ux_icon('lucide:pencil', {class: 'size-4'}) }}
+                                            </a>
 
                                             <button
                                                 type="button"
@@ -181,6 +190,7 @@
                                                 {{ ux_icon('lucide:eye', {class: 'size-4'}) }}
                                             </button>
                                         </div>
+
                                     </div>
                                 {% endfor %}
                             </div>

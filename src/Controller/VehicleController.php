@@ -188,6 +188,44 @@ final class VehicleController extends AbstractController
         ]);
     }
 
+    #[Route('/invoice/{id}/edit', name: 'app_invoice_edit', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
+    public function editInvoice(
+        Invoice $invoice,
+        Request $request,
+        EntityManagerInterface $em,
+        SluggerInterface $slugger,
+        #[CurrentUser] User $user
+    ): Response {
+        $vehicle = $invoice->getVehicle();
+        if (!$vehicle || $vehicle->getUser() !== $user) {
+            throw $this->createAccessDeniedException('Accès refusé à cette facture.');
+        }
+
+        $form = $this->createForm(InvoiceType::class, $invoice, ['is_edit' => true]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            /** @var UploadedFile|null $uploadedFile */
+            $uploadedFile = $form->get('invoiceFile')->getData();
+            if ($uploadedFile) {
+                $newFilename = $this->moveUploadedFile($uploadedFile, 'invoices', $slugger);
+                $invoice->setInvoicePath($newFilename);
+                $invoice->setInvoiceOriginalName($uploadedFile->getClientOriginalName());
+            }
+
+            $em->flush();
+            $this->addFlash('success', 'Facture mise à jour.');
+
+            return $this->redirectToRoute('app_vehicle_show', ['id' => $vehicle->getId()]);
+        }
+
+        return $this->render('invoice/edit.html.twig', [
+            'form' => $form,
+            'invoice' => $invoice,
+            'vehicle' => $vehicle,
+        ]);
+    }
+
 
     #[Route('/insurance/analyze', name: 'app_insurance_analyze', methods: ['POST'])]
     public function analyzeInsurance(Request $request, InvoiceAnalyzerService $analyzer): JsonResponse

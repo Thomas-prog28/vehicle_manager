@@ -1,0 +1,70 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier la facture — {{ vehicle.brand }} {{ vehicle.model }}{% endblock %}
+
+{% block body %}
+    <div class="min-h-screen bg-background">
+        <header class="mx-auto flex max-w-2xl items-center justify-between px-4 py-6 sm:px-6">
+            <a
+                href="{{ path('app_vehicle_show', {id: vehicle.id}) }}"
+                class="flex items-center gap-2 rounded-full bg-card px-4 py-2.5 text-sm font-semibold shadow-sm transition hover:bg-secondary"
+            >
+                {{ ux_icon('lucide:arrow-left', {class: 'size-4'}) }}
+                Retour à la fiche véhicule
+            </a>
+        </header>
+
+        <main class="mx-auto max-w-2xl px-4 pb-16 sm:px-6">
+            <div class="rounded-3xl bg-card p-6 shadow-sm sm:p-10 animate-rise">
+                <div class="mb-8 flex items-center gap-4">
+                    <span class="grid size-14 shrink-0 place-items-center rounded-2xl bg-brand/10 text-brand">
+                        {{ ux_icon('lucide:file-pen-line', {class: 'size-7'}) }}
+                    </span>
+                    <div>
+                        <h1 class="font-display text-2xl font-bold sm:text-3xl">Modifier la facture</h1>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            {{ vehicle.brand }} {{ vehicle.model }} • {{ invoice.garage ?: invoice.invoiceOriginalName }}
+                        </p>
+                    </div>
+                </div>
+
+                {{ form_start(form, {attr: {class: 'space-y-5'}}) }}
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        {{ form_row(form.invoiceDate) }}
+                        {{ form_row(form.type) }}
+                    </div>
+
+                    {{ form_row(form.garage) }}
+
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        {{ form_row(form.mileage) }}
+                        {{ form_row(form.totalTTC) }}
+                    </div>
+
+                    <div class="rounded-2xl border border-border bg-muted/40 p-4">
+                        <p class="mb-2 text-xs text-muted-foreground">
+                            Document actuel : <span class="font-semibold text-foreground">{{ invoice.invoiceOriginalName }}</span>
+                        </p>
+                        {{ form_row(form.invoiceFile) }}
+                    </div>
+
+                    <div class="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:justify-end">
+                        <a
+                            href="{{ path('app_vehicle_show', {id: vehicle.id}) }}"
+                            class="flex h-12 items-center justify-center rounded-xl px-6 font-semibold text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                        >
+                            Annuler
+                        </a>
+                        <button
+                            type="submit"
+                            class="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-8 font-semibold text-primary-foreground shadow-sm transition hover:-translate-y-0.5"
+                        >
+                            {{ ux_icon('lucide:check', {class: 'size-4'}) }}
+                            Enregistrer
+                        </button>
+                    </div>
+                {{ form_end(form) }}
+            </div>
+        </main>
+    </div>
+{% endblock %}
