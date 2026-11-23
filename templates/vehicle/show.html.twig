@@ -219,7 +219,7 @@
                             <p class="text-sm text-muted-foreground">Aucun contrat d'assurance associé à ce véhicule.</p>
                         </div>
                     {% else %}
-                        {% for coverage in vehicle.coverages %}
+                        {% for coverage in vehicle.sortedCoverages %}
                             {% set ins = coverage.insurance %}
                             <div class="space-y-4 rounded-3xl bg-card p-6 shadow-sm">
                                 <div class="flex items-center justify-between">
