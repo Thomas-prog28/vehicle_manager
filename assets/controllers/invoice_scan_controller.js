@@ -8,6 +8,13 @@ export default class extends Controller {
         const file = this.fileInputTarget.files[0];
         if (!file) return;
 
+        // Hors ligne : pas d'analyse IA distante possible
+        if (!navigator.onLine) {
+            this.statusTarget.classList.remove('hidden');
+            this.statusTarget.textContent = 'Mode hors ligne : l’analyse automatique par IA est indisponible sans connexion. Tu peux saisir les champs manuellement, ton document sera conservé et envoyé au retour du réseau.';
+            return;
+        }
+
         this.statusTarget.classList.remove('hidden');
         this.statusTarget.textContent = 'Analyse du document par l’IA en cours...';
 

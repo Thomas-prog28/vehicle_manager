@@ -23,33 +23,53 @@ export default class extends Controller {
             return;
         }
 
-        // Hors ligne : on intercepte l'envoi et on sauvegarde dans IndexedDB
+        // Hors ligne : on intercepte l'envoi et on bloque toute tentative de soumission réseau
         event.preventDefault();
-        const form = event.target;
+        event.stopImmediatePropagation();
+
+        const form = event.currentTarget || event.target;
         const formData = new FormData(form);
         const entries = [];
 
         for (const [key, value] of formData.entries()) {
-            entries.push({ key, value });
+            if (value instanceof File) {
+                entries.push({
+                    key,
+                    value,
+                    filename: value.name,
+                    isFile: true,
+                });
+            } else {
+                entries.push({
+                    key,
+                    value,
+                    isFile: false,
+                });
+            }
         }
 
-        await this.saveToIndexedDB({
-            url: form.action || window.location.href,
-            createdAt: Date.now(),
-            entries,
-        });
+        try {
+            await this.saveToIndexedDB({
+                url: form.action || window.location.href,
+                createdAt: Date.now(),
+                entries,
+            });
 
-        // Ferme la modale ouverte et affiche la confirmation hors-ligne
-        const modal = form.closest('[data-modal-target="dialog"]');
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.body.classList.remove('overflow-hidden');
+            // Ferme la modale ouverte et affiche la confirmation hors-ligne
+            const modal = form.closest('[data-modal-target="dialog"]');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.classList.remove('overflow-hidden');
+            }
+
+            form.reset();
+            await this.updateBanner();
+            alert('Hors connexion : ta saisie et ton document ont été enregistrés localement sur ton appareil. Ils seront envoyés automatiquement dès le retour du réseau.');
+        } catch (error) {
+            console.error('Erreur de sauvegarde hors ligne :', error);
+            alert('Erreur lors de la sauvegarde locale : ' + (error?.message || error));
         }
-
-        form.reset();
-        await this.updateBanner();
-        alert('Hors connexion : ta facture et ta photo ont été sauvegardées sur le téléphone. Elles seront envoyées automatiquement dès le retour du réseau.');
     }
 
     async syncAll() {
@@ -67,7 +87,14 @@ export default class extends Controller {
             try {
                 const formData = new FormData();
                 for (const entry of item.entries) {
-                    formData.append(entry.key, entry.value);
+                    if (entry.isFile && entry.value instanceof Blob) {
+                        formData.append(entry.key, entry.value, entry.filename || 'document');
+                    } else if (entry.value instanceof Blob) {
+                        const filename = entry.filename || (entry.value instanceof File ? entry.value.name : 'document');
+                        formData.append(entry.key, entry.value, filename);
+                    } else {
+                        formData.append(entry.key, entry.value);
+                    }
                 }
 
                 const response = await fetch(item.url, {
