@@ -25,6 +25,10 @@ security:
                 enable_csrf: true
                 default_target_path: app_dashboard
                 always_use_default_target_path: true
+            remember_me: 
+                secret: '%kernel.secret%'
+                lifetime: 31536000 # 1 an en secondes
+                always_remember_me: true
             login_throttling:
                     max_attempts: 5
             logout:
