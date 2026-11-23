@@ -93,19 +93,34 @@ final class VehicleController extends AbstractController
             $newFilename = $this->moveUploadedFile($uploadedFile, 'insurances', $slugger);
 
             $premium = (string) $insuranceForm->get('premium')->getData();
+            $scannedTotal = $insurance->getTotalAmount();
 
-            $insurance->setUser($user);
-            $insurance->setInsurancePath($newFilename);
-            $insurance->setInsuranceOriginalName($uploadedFile->getClientOriginalName());
-            // Si le scan IA a rempli le total global (ex: 968.55 €), on le garde ; sinon on prend la cotisation du véhicule
-            $insurance->setTotalAmount($insurance->getTotalAmount() ?: $premium);
+            // Vérifie si cet avis d'échéance existe déjà pour cet utilisateur (même n° de contrat et même échéance)
+            $existingInsurance = $em->getRepository(Insurance::class)->findOneBy([
+                'user' => $user,
+                'contractNumber' => $insurance->getContractNumber(),
+                'endDate' => $insurance->getEndDate(),
+            ]);
+
+            if ($existingInsurance) {
+                $targetInsurance = $existingInsurance;
+                if ($scannedTotal && (float) $scannedTotal > (float) $targetInsurance->getTotalAmount()) {
+                    $targetInsurance->setTotalAmount($scannedTotal);
+                }
+            } else {
+                $insurance->setUser($user);
+                $insurance->setInsurancePath($newFilename);
+                $insurance->setInsuranceOriginalName($uploadedFile->getClientOriginalName());
+                $insurance->setTotalAmount($scannedTotal ?: $premium);
+                $em->persist($insurance);
+                $targetInsurance = $insurance;
+            }
 
             $covered = new Covered();
             $covered->setVehicle($vehicle);
             $covered->setInsurance($insurance);
             $covered->setPremium($premium);
 
-            $em->persist($insurance);
             $em->persist($covered);
             $em->flush();
 
@@ -143,7 +158,7 @@ final class VehicleController extends AbstractController
         }
 
         $vehiclePlate = $request->query->get('plate');
-        $vehiclePlate = $request->query->get('vehicle');
+        $vehicleLabel = $request->query->get('vehicle');
 
         try {
             return $this->json($analyzer->analyzeInsurance($file, $vehiclePlate));

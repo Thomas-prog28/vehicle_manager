@@ -93,7 +93,7 @@ PROMPT;
     /**
      * Analyse une attestation ou un échéancier d'assurance.
      *
-     * @return array{insurer: ?string, contractNumber: ?string, startDate: ?string, endDate: ?string, premium: ?float}
+     * @return array{insurer: ?string, contractNumber: ?string, startDate: ?string, endDate: ?string, premium: ?float, totalAmount: ?float}
      */
     public function analyzeInsurance(UploadedFile $file, ?string $vehiclePlate = null, ?string $vehicleLabel = null): array
     {
@@ -184,6 +184,7 @@ PROMPT;
             'startDate' => isset($data['startDate']) && is_string($data['startDate']) ? $data['startDate'] : null,
             'endDate' => isset($data['endDate']) && is_string($data['endDate']) ? $data['endDate'] : null,
             'premium' => isset($data['premium']) && is_numeric($data['premium']) ? (float) $data['premium'] : null,
+            'totalAmount' => isset($data['totalAmount']) && is_numeric($data['totalAmount']) ? (float) $data['totalAmount'] : null,
         ];
     }
 
