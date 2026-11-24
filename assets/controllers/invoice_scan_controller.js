@@ -1,47 +1,40 @@
-import { Controller } from '@hotwired/stimulus';
+try {
+    const response = await fetch(this.urlValue, {
+        method: 'POST',
+        body: formData,
+    });
 
-export default class extends Controller {
-    static targets = ['fileInput', 'status'];
-    static values = { url: String };
+    const result = await response.json().catch(() => ({}));
 
-    async scan() {
-        const file = this.fileInputTarget.files[0];
-        if (!file) return;
+    if (!response.ok) {
+        const rawError = (result.error || '').toLowerCase();
+        let friendlyMessage = 'Impossible de lire automatiquement ce document. Tu peux saisir les champs manuellement.';
 
-        // Hors ligne : pas d'analyse IA distante possible
-        if (!navigator.onLine) {
-            this.statusTarget.classList.remove('hidden');
-            this.statusTarget.textContent = 'Mode hors ligne : l’analyse automatique par IA est indisponible sans connexion. Tu peux saisir les champs manuellement, ton document sera conservé et envoyé au retour du réseau.';
-            return;
+        if (response.status === 429 || rawError.includes('quota') || rawError.includes('rate limit') || rawError.includes('resource_exhausted')) {
+            friendlyMessage = 'Quota IA temporairement atteint (limite de requêtes). Réessaie dans 1 minute ou saisis les champs manuellement.';
+        } else if (response.status === 422 || rawError.includes('lourd') || rawError.includes('format')) {
+            friendlyMessage = result.error;
         }
 
+        throw new Error(friendlyMessage);
+    }
+
+    // Remplissage automatique des champs data-scan-field="..."
+    Object.entries(result).forEach(([key, value]) => {
+        if (value === null || value === undefined) return;
+        const field = this.element.querySelector(`[data-scan-field="${key}"]`);
+        if (field) {
+            field.value = value;
+        }
+    });
+
+    if (this.hasStatusTarget) {
+        this.statusTarget.textContent = 'Document analysé avec succès. Vérifie les champs pré-remplis avant d’enregistrer.';
         this.statusTarget.classList.remove('hidden');
-        this.statusTarget.textContent = 'Analyse du document par l’IA en cours...';
-
-        const formData = new FormData();
-        formData.append('document', file);
-
-        try {
-            const response = await fetch(this.urlValue, {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) throw new Error('Erreur lors de l’analyse');
-
-            const data = await response.json();
-
-            // Remplit automatiquement chaque champ correspondant aux clés renvoyées par l'IA
-            Object.entries(data).forEach(([key, value]) => {
-                if (value !== null) {
-                    const field = this.element.querySelector(`[data-scan-field="${key}"]`);
-                    if (field) field.value = value;
-                }
-            });
-
-            this.statusTarget.textContent = 'Champs pré-remplis automatiquement. Vérifie les infos avant de valider.';
-        } catch {
-            this.statusTarget.textContent = 'Impossible de lire automatiquement ce document. Tu peux saisir les champs manuellement.';
-        }
+    }
+} catch (error) {
+    if (this.hasStatusTarget) {
+        this.statusTarget.textContent = error.message || 'Impossible de lire automatiquement ce document. Tu peux saisir les champs manuellement.';
+        this.statusTarget.classList.remove('hidden');
     }
 }
