@@ -159,6 +159,13 @@
                                                         • {{ invoice.mileage|number_format(0, ',', ' ') }} km
                                                     {% endif %}
                                                 </p>
+                                                
+                                                {% if invoice.observations %}
+                                                    <p class="mt-1 text-xs font-medium text-foreground/80">
+                                                        {{ invoice.observations }}
+                                                    </p>
+                                                {% endif %}
+                                                
                                             </div>
                                         </div>
 
@@ -377,6 +384,8 @@
                     {{ form_row(invoice_form.mileage, {attr: {'data-scan-field': 'mileage'}}) }}
                     {{ form_row(invoice_form.totalTTC, {attr: {'data-scan-field': 'totalTTC'}}) }}
                 </div>
+
+                {{ form_row(invoice_form.observations, {attr: {'data-scan-field': 'observations'}}) }}
 
                 <div class="mt-6 flex items-center justify-end gap-3 pt-2">
                     <button

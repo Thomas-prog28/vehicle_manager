@@ -32,6 +32,9 @@ class Invoice
     #[ORM\Column(length: 255)]
     private ?string $invoiceOriginalName = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $observations = null;
+
     #[ORM\ManyToOne(inversedBy: 'invoices')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?Vehicle $vehicle = null;
@@ -145,6 +148,18 @@ class Invoice
     public function setInvoiceOriginalName(string $invoiceOriginalName): static
     {
         $this->invoiceOriginalName = $invoiceOriginalName;
+
+        return $this;
+    }
+
+    public function getObservations(): ?string
+    {
+        return $this->observations;
+    }
+
+    public function setObservations(?string $observations): static
+    {
+        $this->observations = $observations;
 
         return $this;
     }

@@ -65,6 +65,14 @@ class InvoiceType extends AbstractType
                 'required' => false,
                 'attr' => ['placeholder' => 'Ex. 149.90'],
             ])
+            ->add('observations', TextType::class, [
+                'label' => 'Observations (facultatif)',
+                'required' => false,
+                'attr' => [
+                    'placeholder' => 'Ex. Freins avant, pneu arrière gauche, vidange + filtre...',
+                ],
+            ])
+
         ;
     }
 
