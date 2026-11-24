@@ -1,4 +1,4 @@
-const CACHE_NAME = 'garage-offline-v3';
+const CACHE_NAME = 'garage-offline-v4';
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();
@@ -22,10 +22,18 @@ self.addEventListener('fetch', (event) => {
     }
 
     // Ne jamais mettre en cache les routes d'authentification ou de déconnexion
-    const url = new URL(request.url);
-    if (url.pathname.startsWith('/login') || url.pathname.startsWith('/logout') || url.pathname.startsWith('/register')) {
+    // Dans l'événement fetch de public/sw.js, juste après la vérification GET :
+    const url = new URL(event.request.url);
+    if (
+        url.pathname.startsWith('/login') ||
+        url.pathname.startsWith('/register') ||
+        url.pathname.startsWith('/logout') ||
+        url.pathname.startsWith('/reset-password') ||
+        url.pathname.startsWith('/admin')
+    ) {
         return;
     }
+
 
     event.respondWith(
         fetch(request)
