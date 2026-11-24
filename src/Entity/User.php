@@ -36,6 +36,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?string $password = null;
 
+    #[ORM\Column(options: ['default' => 0])]
+    private int $loginCount = 0;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $lastLoginAt = null;
+
+
     /**
      * @var Collection<int, Vehicle>
      */
@@ -191,7 +198,62 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 $insurance->setUser(null);
             }
         }
+        return $this;
+    }
+
+    public function getLoginCount(): int
+    {
+        return $this->loginCount;
+    }
+
+    public function setLoginCount(int $loginCount): static
+    {
+        $this->loginCount = $loginCount;
 
         return $this;
+    }
+
+    public function incrementLoginCount(): static
+    {
+        $this->loginCount++;
+        $this->lastLoginAt = new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    public function getLastLoginAt(): ?\DateTimeImmutable
+    {
+        return $this->lastLoginAt;
+    }
+
+    public function setLastLoginAt(?\DateTimeImmutable $lastLoginAt): static
+    {
+        $this->lastLoginAt = $lastLoginAt;
+
+        return $this;
+    }
+
+    /**
+     * Compte le nombre total de fichiers (factures + attestations d'assurance) téléversés par cet utilisateur.
+     */
+    public function getUploadedFilesCount(): int
+    {
+        $count = 0;
+
+        foreach ($this->vehicles as $vehicle) {
+            foreach ($vehicle->getInvoices() as $invoice) {
+                if ($invoice->getInvoicePath() !== null) {
+                    $count++;
+                }
+            }
+        }
+
+        foreach ($this->insurances as $insurance) {
+            if ($insurance->getInsurancePath() !== null) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 }

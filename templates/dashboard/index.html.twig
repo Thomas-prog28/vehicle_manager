@@ -14,6 +14,12 @@
             </a>
 
             <div class="flex items-center gap-2">
+                {% if is_granted('ROLE_ADMIN') %}
+                    <a href="{{ path('admin') }}" class="grid size-11 place-items-center rounded-full bg-card shadow-sm transition hover:bg-secondary" aria-label="Administration" title="Administration">
+                        {{ ux_icon('lucide:shield', {class: 'size-5'}) }}
+                    </a>
+                {% endif %}
+
                 <button type="button" class="relative grid size-11 cursor-pointer place-items-center rounded-full bg-card shadow-sm" aria-label="Alertes">
                     {{ ux_icon('lucide:bell', {class: 'size-5'}) }}
                     {% if alerts_count|default(0) > 0 %}
@@ -27,6 +33,7 @@
                     {{ ux_icon('lucide:log-out', {class: 'size-5'}) }}
                 </a>
             </div>
+
         </header>
 
         <main class="mx-auto max-w-7xl px-6 pb-16">
